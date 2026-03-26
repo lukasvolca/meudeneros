@@ -16,6 +16,19 @@ pnpm workspace monorepo using TypeScript. Each package manages its own dependenc
 - **API codegen**: Orval (from OpenAPI spec)
 - **Build**: esbuild (CJS bundle)
 
+## Artifacts
+
+### `artifacts/finance-tracker` (`@workspace/finance-tracker`)
+
+Personal finance tracker web app built with React + Vite. Frontend-only application using localStorage for persistence.
+
+- Stack: React, Vite, Tailwind CSS, Wouter (routing), Framer Motion, date-fns, lucide-react
+- Pages: Dashboard, Transactions, Categories/Reports, Settings
+- State management: React Context + useState stored in localStorage
+- Data models: Transaction (id, date, title, amount, type, categoryId, categoryName, createdAt) and Category (id, name, createdAt)
+- Starts with empty transactions and categories (no defaults)
+- Utility functions in `src/lib/finance.ts`
+
 ## Structure
 
 ```text

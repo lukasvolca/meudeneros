@@ -1,0 +1,15 @@
+packages:
+  "date-fns": "For formatting and manipulating transaction dates"
+  "framer-motion": "For premium page transitions, list animations, and micro-interactions"
+  "clsx": "Utility for constructing className strings conditionally"
+  "tailwind-merge": "Utility for merging tailwind classes without style conflicts"
+
+images:
+  - path: "artifacts/finance-tracker/public/images/empty-state-art.png"
+    description: "Abstract 3D geometric shapes in dark navy and vibrant green/red neon lights, minimalist and premium style, dark background"
+    aspect_ratio: "1:1"
+
+notes:
+  - Frontend-only application using localStorage for data persistence
+  - Implements React Context for state management instead of API hooks
+  - Uses wouter for routing as per system constraints

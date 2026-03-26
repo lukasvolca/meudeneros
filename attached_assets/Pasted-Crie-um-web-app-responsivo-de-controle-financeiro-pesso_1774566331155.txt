@@ -1,0 +1,184 @@
+Crie um web app responsivo de controle financeiro pessoal, com visual premium e moderno, seguindo exatamente o estilo das telas de referência que já estão prontas.
+
+OBJETIVO DO APP
+Quero uma aplicação para registrar ganhos e gastos do mês, organizar tudo por categorias e visualizar um dashboard com resumo financeiro mensal.
+
+ESTILO VISUAL
+- Fundo geral escuro
+- Interface elegante, minimalista e premium
+- Cores principais:
+  - verde claro para valores de entrada/ganho
+  - vermelho claro para valores de saída/gasto
+  - tons neutros escuros no fundo, cards e sidebar
+- Aparência semelhante às telas enviadas:
+  - sidebar fixa à esquerda
+  - dashboard com cards
+  - tela de registro simples
+  - tela de categorias/histórico
+- Manter visual sofisticado, com cantos arredondados, sombras suaves e boa hierarquia tipográfica
+
+STACK
+Use uma stack simples e moderna, pronta para rodar no Replit:
+- Frontend: React + Vite
+- Estilização: Tailwind CSS
+- Ícones: lucide-react
+- Estado: React hooks
+- Persistência: localStorage por enquanto
+- Estrutura preparada para no futuro conectar banco de dados
+
+ESTRUTURA DAS TELAS
+Crie as seguintes páginas:
+
+1. DASHBOARD
+A página principal deve mostrar:
+- saldo disponível do mês
+- total de entradas no mês
+- total de saídas no mês
+- quanto foi economizado no mês
+
+REGRAS DO DASHBOARD
+- saldo disponível = total de entradas - total de saídas
+- economizado no mês = o mesmo valor positivo restante após descontar os gastos
+- mostrar cards com destaque
+- mostrar também resumo por categoria:
+  - nome da categoria
+  - total gasto ou total recebido naquela categoria no mês
+- se a categoria tiver apenas saídas, exibir valor em vermelho claro
+- se a categoria tiver apenas entradas, exibir em verde claro
+- se tiver misto, mostrar saldo da categoria
+- incluir lista de atividades recentes
+
+2. TRANSAÇÕES
+Tela para cadastrar um item financeiro de forma muito simples.
+
+Ao registrar um item, quero apenas estes campos:
+- data
+- nome do item
+- valor
+
+Além disso:
+- deve haver escolha do tipo:
+  - ganho
+  - gasto
+- deve haver escolha de categoria
+- por padrão, nenhuma categoria virá criada
+- eu preciso conseguir criar a categoria na hora (“on-the-go”), sem sair da tela
+- ao criar uma nova categoria, ela já deve ficar disponível imediatamente para seleção
+- formulário simples, rápido e limpo
+
+REGRAS DA TRANSAÇÃO
+- se for ganho, armazenar valor como entrada
+- se for gasto, armazenar valor como saída
+- o valor sempre será digitado positivo, e o sistema decide o comportamento conforme o tipo
+- permitir editar e excluir transações
+- validar campos obrigatórios
+
+3. CATEGORIAS / HISTÓRICO
+Quero uma tela onde eu possa visualizar o histórico separado por categorias, em grupos/abas diferentes.
+
+FUNCIONAMENTO
+- cada categoria criada deve aparecer como uma aba, chip ou botão de filtro
+- ao clicar em uma categoria, mostrar apenas o histórico daquela categoria
+- dentro da categoria, separar visualmente:
+  - entradas
+  - saídas
+- exibir:
+  - data
+  - nome do item
+  - valor
+- mostrar total da categoria no topo
+- mostrar quantidade de transações daquela categoria
+- incluir filtro por período/mês futuramente, mas por enquanto foque no mês atual
+
+4. SETTINGS
+Criar uma tela simples de configurações apenas com estrutura visual, pronta para expansão futura.
+
+SIDEBAR
+Criar menu lateral com:
+- Dashboard
+- Transactions
+- Reports
+- Categories
+- Settings
+
+Observação:
+- “Reports” pode inicialmente reaproveitar ou redirecionar para a visualização detalhada por categorias/histórico
+- manter sidebar fixa e com item ativo destacado em verde
+
+DADOS E LÓGICA
+Estruture os dados com estes campos:
+- id
+- date
+- title
+- amount
+- type ("income" ou "expense")
+- categoryId
+- categoryName
+- createdAt
+
+Categorias:
+- id
+- name
+- createdAt
+
+REGRAS IMPORTANTES
+- iniciar com lista de categorias vazia
+- iniciar com lista de transações vazia
+- salvar tudo no localStorage
+- ao recarregar a página, os dados devem permanecer
+- criar funções utilitárias para:
+  - calcular saldo total
+  - calcular total de entradas
+  - calcular total de saídas
+  - calcular economia do mês
+  - agrupar transações por categoria
+  - listar transações recentes
+
+COMPONENTES
+Organize em componentes reutilizáveis:
+- Sidebar
+- Topbar
+- SummaryCard
+- TransactionForm
+- CategoryTabs
+- TransactionList
+- RecentActivity
+- EmptyState
+- ModalCreateCategory
+
+COMPORTAMENTO DE UI
+- mostrar estado vazio bonito quando não houver categorias ou transações
+- usar feedback visual ao criar categoria e ao salvar transação
+- botões com hover suave
+- inputs escuros com boa legibilidade
+- cards com contraste elegante
+- valores de ganho em verde claro
+- valores de gasto em vermelho claro
+
+RESPONSIVIDADE
+- o layout deve funcionar bem em desktop e tablet
+- em telas menores, a sidebar pode colapsar
+
+CÓDIGO
+- escrever código limpo, componentizado e organizado em pastas
+- criar dados mock apenas se necessário, mas o app deve iniciar vazio
+- entregar um projeto funcional completo, com navegação entre páginas
+- usar React Router para navegação
+- deixar fácil para evoluir depois para backend real
+
+EXTRA
+Na tela de dashboard, incluir:
+- card de saldo disponível
+- card de entradas
+- card de saídas
+- card de economia do mês
+- resumo por categoria
+- atividades recentes
+
+Na tela de categorias:
+- abas dinâmicas baseadas nas categorias criadas pelo usuário
+- totais claros por aba
+- listagem organizada por data
+
+IMPORTANTE
+Quero que a implementação siga o design escuro premium das referências, com aparência muito próxima às telas enviadas, não um layout genérico.

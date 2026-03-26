@@ -4,10 +4,10 @@ import { cn } from "@/lib/utils";
 
 const navItems = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/transactions", label: "Transactions", icon: Receipt },
-  { href: "/reports", label: "Reports", icon: PieChart },
-  { href: "/categories", label: "Categories", icon: Tags },
-  { href: "/settings", label: "Settings", icon: Settings },
+  { href: "/transactions", label: "Transações", icon: Receipt },
+  { href: "/reports", label: "Relatórios", icon: PieChart },
+  { href: "/categories", label: "Categorias", icon: Tags },
+  { href: "/settings", label: "Configurações", icon: Settings },
 ];
 
 export function Sidebar() {
@@ -22,7 +22,7 @@ export function Sidebar() {
         <span className="font-display font-bold text-xl text-white tracking-tight">FinTrack</span>
       </div>
 
-      <nav className="flex-1 px-4 py-6 space-y-2">
+      <nav className="flex-1 px-4 py-6 space-y-1">
         {navItems.map((item) => {
           const isActive = location === item.href;
           return (
@@ -30,13 +30,13 @@ export function Sidebar() {
               key={item.href}
               href={item.href}
               className={cn(
-                "flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 font-medium",
+                "flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-medium",
                 isActive
-                  ? "bg-primary/10 text-primary border border-primary/20 shadow-inner"
+                  ? "bg-primary/10 text-primary border border-primary/20"
                   : "text-muted-foreground hover:text-white hover:bg-white/5"
               )}
             >
-              <item.icon className={cn("w-5 h-5 transition-transform duration-300", isActive ? "scale-110" : "")} />
+              <item.icon className="w-5 h-5 flex-shrink-0" />
               {item.label}
             </Link>
           );
@@ -44,9 +44,9 @@ export function Sidebar() {
       </nav>
 
       <div className="p-6">
-        <div className="p-4 rounded-xl bg-gradient-to-b from-white/5 to-transparent border border-white/5">
-          <p className="text-xs text-muted-foreground font-medium mb-1">Local Storage</p>
-          <p className="text-sm text-white/80">Data is saved securely on your device.</p>
+        <div className="p-4 rounded-xl bg-white/5 border border-white/5">
+          <p className="text-xs text-muted-foreground font-medium mb-1">Armazenamento Local</p>
+          <p className="text-sm text-white/70">Seus dados ficam salvos neste dispositivo.</p>
         </div>
       </div>
     </div>

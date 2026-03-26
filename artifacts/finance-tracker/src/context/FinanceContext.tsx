@@ -10,24 +10,27 @@ interface FinanceContextType {
   addTransaction: (tx: Omit<Transaction, "id" | "createdAt">) => void;
   updateTransaction: (id: string, tx: Partial<Omit<Transaction, "id" | "createdAt">>) => void;
   deleteTransaction: (id: string) => void;
-  addCategory: (name: string) => string; // returns new category id
+  addCategory: (name: string) => string;
+  updateCategory: (id: string, name: string) => void;
   deleteCategory: (id: string) => void;
   clearAllData: () => void;
 }
 
 const FinanceContext = createContext<FinanceContextType | undefined>(undefined);
 
-const DEFAULT_CATEGORIES: Category[] = [];
-
 export function FinanceProvider({ children }: { children: React.ReactNode }) {
   const [transactions, setTransactions] = useState<Transaction[]>(() => {
-    const saved = localStorage.getItem("finance_transactions");
-    return saved ? JSON.parse(saved) : [];
+    try {
+      const saved = localStorage.getItem("finance_transactions");
+      return saved ? JSON.parse(saved) : [];
+    } catch { return []; }
   });
 
   const [categories, setCategories] = useState<Category[]>(() => {
-    const saved = localStorage.getItem("finance_categories");
-    return saved ? JSON.parse(saved) : DEFAULT_CATEGORIES;
+    try {
+      const saved = localStorage.getItem("finance_categories");
+      return saved ? JSON.parse(saved) : [];
+    } catch { return []; }
   });
 
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -53,7 +56,17 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
 
   const updateTransaction = (id: string, txData: Partial<Omit<Transaction, "id" | "createdAt">>) => {
     setTransactions((prev) =>
-      prev.map((tx) => (tx.id === id ? { ...tx, ...txData } : tx))
+      prev.map((tx) => {
+        if (tx.id !== id) return tx;
+        const category = txData.categoryId
+          ? categories.find(c => c.id === txData.categoryId)
+          : undefined;
+        return {
+          ...tx,
+          ...txData,
+          categoryName: category?.name || txData.categoryName || tx.categoryName,
+        };
+      })
     );
   };
 
@@ -63,24 +76,23 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
 
   const addCategory = (name: string) => {
     const id = generateId();
-    const newCat: Category = {
-      id,
-      name,
-      createdAt: new Date().toISOString(),
-    };
+    const newCat: Category = { id, name, createdAt: new Date().toISOString() };
     setCategories((prev) => [...prev, newCat]);
     return id;
   };
 
+  const updateCategory = (id: string, name: string) => {
+    setCategories((prev) => prev.map(c => c.id === id ? { ...c, name } : c));
+    setTransactions((prev) => prev.map(tx => tx.categoryId === id ? { ...tx, categoryName: name } : tx));
+  };
+
   const deleteCategory = (id: string) => {
     setCategories((prev) => prev.filter((c) => c.id !== id));
-    // Also remove or re-categorize transactions? Keeping it simple: don't delete associated txs, 
-    // but they will lack a named category unless handled.
   };
 
   const clearAllData = () => {
     setTransactions([]);
-    setCategories(DEFAULT_CATEGORIES);
+    setCategories([]);
   };
 
   return (
@@ -94,6 +106,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
         updateTransaction,
         deleteTransaction,
         addCategory,
+        updateCategory,
         deleteCategory,
         clearAllData,
       }}

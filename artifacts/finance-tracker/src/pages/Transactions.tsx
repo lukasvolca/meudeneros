@@ -2,47 +2,36 @@ import { Layout } from "@/components/Layout";
 import { TransactionForm } from "@/components/TransactionForm";
 import { TransactionList } from "@/components/TransactionList";
 import { useFinance } from "@/context/FinanceContext";
-import { Plus } from "lucide-react";
+import { Plus, X } from "lucide-react";
 import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 
 export default function Transactions() {
   const { transactions } = useFinance();
   const [showForm, setShowForm] = useState(false);
 
-  // Sort all transactions newest first
   const sortedTransactions = [...transactions].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   return (
-    <Layout title="Transactions">
-      <div className="space-y-8">
+    <Layout title="Transações">
+      <div className="space-y-6">
         <div className="flex justify-end">
           <button
             onClick={() => setShowForm(!showForm)}
-            className="flex items-center gap-2 px-6 py-3 rounded-xl bg-primary text-primary-foreground font-bold hover:shadow-lg hover:shadow-primary/20 hover:-translate-y-0.5 transition-all duration-300"
+            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-primary-foreground font-semibold hover:bg-primary/90 transition-colors"
           >
-            <Plus className="w-5 h-5" />
-            Add Transaction
+            {showForm ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
+            {showForm ? "Fechar" : "Nova Transação"}
           </button>
         </div>
 
-        <AnimatePresence>
-          {showForm && (
-            <motion.div
-              initial={{ opacity: 0, height: 0, y: -20 }}
-              animate={{ opacity: 1, height: "auto", y: 0 }}
-              exit={{ opacity: 0, height: 0, y: -20 }}
-              className="overflow-hidden"
-            >
-              <div className="pb-8">
-                <TransactionForm onClose={() => setShowForm(false)} />
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        {showForm && (
+          <div className="pb-2">
+            <TransactionForm onClose={() => setShowForm(false)} />
+          </div>
+        )}
 
         <div className="glass-panel p-6 sm:p-8 rounded-3xl">
-          <TransactionList transactions={sortedTransactions} emptyMessage="No transactions exist. Add one above!" />
+          <TransactionList transactions={sortedTransactions} emptyMessage="Nenhuma transação. Clique em Nova Transação para começar." />
         </div>
       </div>
     </Layout>

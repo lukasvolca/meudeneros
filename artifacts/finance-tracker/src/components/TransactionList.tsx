@@ -53,7 +53,7 @@ export function TransactionList({ transactions, emptyMessage = "Nenhuma transaç
                   className="group glass-panel rounded-xl p-4 flex items-center justify-between hover:bg-white/[0.02] transition-colors border-l-4 border-l-transparent hover:border-l-primary"
                 >
                   <div className="flex items-center gap-3">
-                    <CategoryIcon category={category} size="md" />
+                    <CategoryIcon category={category} size="xl" />
                     <div>
                       <p className="font-semibold text-white text-sm">{tx.title}</p>
                       <div className="flex items-center gap-2 mt-0.5">

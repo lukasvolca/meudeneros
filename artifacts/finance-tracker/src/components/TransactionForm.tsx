@@ -43,7 +43,7 @@ export function TransactionForm({ initialData, onClose }: TransactionFormProps) 
       type,
       amount: parseFloat(amount),
       title: title.trim(),
-      date: new Date(date).toISOString(),
+      date: new Date(date + 'T12:00:00').toISOString(),
       categoryId,
       categoryName: selectedCategory?.name || "",
     };

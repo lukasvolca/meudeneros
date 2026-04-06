@@ -91,7 +91,7 @@ export default function Settings() {
         <section className="glass-panel p-8 rounded-3xl">
           <div className="flex items-center gap-3 border-b border-white/5 pb-4 mb-4">
             <Info className="w-5 h-5 text-muted-foreground" />
-            <h3 className="text-lg font-display font-bold">Sobre o FinTrack</h3>
+            <h3 className="text-lg font-display font-bold">Sobre o Meu Deneros</h3>
           </div>
           <p className="text-sm text-muted-foreground leading-relaxed">
             FinTrack é um controle financeiro pessoal premium, com foco em privacidade.

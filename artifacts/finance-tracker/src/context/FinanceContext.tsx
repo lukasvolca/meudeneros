@@ -10,8 +10,8 @@ interface FinanceContextType {
   addTransaction: (tx: Omit<Transaction, "id" | "createdAt">) => void;
   updateTransaction: (id: string, tx: Partial<Omit<Transaction, "id" | "createdAt">>) => void;
   deleteTransaction: (id: string) => void;
-  addCategory: (name: string) => string;
-  updateCategory: (id: string, name: string) => void;
+  addCategory: (name: string, icon?: string) => string;
+  updateCategory: (id: string, updates: { name?: string; icon?: string }) => void;
   deleteCategory: (id: string) => void;
   clearAllData: () => void;
 }
@@ -74,16 +74,20 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
     setTransactions((prev) => prev.filter((tx) => tx.id !== id));
   };
 
-  const addCategory = (name: string) => {
+  const addCategory = (name: string, icon?: string) => {
     const id = generateId();
-    const newCat: Category = { id, name, createdAt: new Date().toISOString() };
+    const newCat: Category = { id, name, icon, createdAt: new Date().toISOString() };
     setCategories((prev) => [...prev, newCat]);
     return id;
   };
 
-  const updateCategory = (id: string, name: string) => {
-    setCategories((prev) => prev.map(c => c.id === id ? { ...c, name } : c));
-    setTransactions((prev) => prev.map(tx => tx.categoryId === id ? { ...tx, categoryName: name } : tx));
+  const updateCategory = (id: string, updates: { name?: string; icon?: string }) => {
+    setCategories((prev) => prev.map(c => c.id === id ? { ...c, ...updates } : c));
+    if (updates.name) {
+      setTransactions((prev) =>
+        prev.map(tx => tx.categoryId === id ? { ...tx, categoryName: updates.name! } : tx)
+      );
+    }
   };
 
   const deleteCategory = (id: string) => {

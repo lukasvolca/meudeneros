@@ -6,6 +6,7 @@ import { ptBR } from "date-fns/locale";
 import { Edit2, Trash2, ArrowUpRight, ArrowDownRight } from "lucide-react";
 import { useState } from "react";
 import { TransactionForm } from "./TransactionForm";
+import { CategoryIcon } from "./CategoryIcon";
 
 export function TransactionList({ transactions, emptyMessage = "Nenhuma transação encontrada." }: { transactions: Transaction[], emptyMessage?: string }) {
   const { categories, deleteTransaction } = useFinance();
@@ -51,13 +52,22 @@ export function TransactionList({ transactions, emptyMessage = "Nenhuma transaç
                   key={tx.id}
                   className="group glass-panel rounded-xl p-4 flex items-center justify-between hover:bg-white/[0.02] transition-colors border-l-4 border-l-transparent hover:border-l-primary"
                 >
-                  <div className="flex items-center gap-4">
-                    <div className={`w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center ${isIncome ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'}`}>
-                      {isIncome ? <ArrowDownRight className="w-5 h-5" /> : <ArrowUpRight className="w-5 h-5" />}
-                    </div>
+                  <div className="flex items-center gap-3">
+                    <CategoryIcon category={category} size="md" />
                     <div>
-                      <p className="font-semibold text-white">{tx.title}</p>
-                      <p className="text-xs text-muted-foreground">{category?.name || tx.categoryName || "Sem categoria"}</p>
+                      <p className="font-semibold text-white text-sm">{tx.title}</p>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <span className={`inline-flex items-center gap-1 text-xs font-medium ${isIncome ? 'text-success' : 'text-destructive'}`}>
+                          {isIncome ? <ArrowDownRight className="w-3 h-3" /> : <ArrowUpRight className="w-3 h-3" />}
+                          {isIncome ? 'Entrada' : 'Saída'}
+                        </span>
+                        {(category?.name || tx.categoryName) && (
+                          <>
+                            <span className="text-white/20">·</span>
+                            <span className="text-xs text-muted-foreground">{category?.name || tx.categoryName}</span>
+                          </>
+                        )}
+                      </div>
                     </div>
                   </div>
 

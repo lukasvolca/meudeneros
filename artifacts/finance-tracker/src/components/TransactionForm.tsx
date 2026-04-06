@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { useFinance } from "@/context/FinanceContext";
-import { Plus, X, ArrowDownRight, ArrowUpRight } from "lucide-react";
+import { Plus, X, ArrowDownRight, ArrowUpRight, ChevronDown } from "lucide-react";
 import { format } from "date-fns";
+import { CategoryIconPicker } from "./CategoryIconPicker";
+import { CategoryIcon } from "./CategoryIcon";
 
 interface TransactionFormProps {
   initialData?: any;
@@ -24,6 +26,8 @@ export function TransactionForm({ initialData, onClose }: TransactionFormProps) 
 
   const [isAddingCategory, setIsAddingCategory] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
+  const [newCategoryIcon, setNewCategoryIcon] = useState("");
+  const [showIconPicker, setShowIconPicker] = useState(false);
 
   const validate = () => {
     const e: typeof errors = {};
@@ -64,12 +68,16 @@ export function TransactionForm({ initialData, onClose }: TransactionFormProps) 
 
   const handleAddCategory = () => {
     if (newCategoryName.trim()) {
-      const id = addCategory(newCategoryName.trim());
+      const id = addCategory(newCategoryName.trim(), newCategoryIcon || undefined);
       setCategoryId(id);
       setIsAddingCategory(false);
       setNewCategoryName("");
+      setNewCategoryIcon("");
+      setShowIconPicker(false);
     }
   };
+
+  const selectedCategory = categories.find(c => c.id === categoryId);
 
   return (
     <div className="glass-panel p-6 rounded-2xl">
@@ -91,9 +99,7 @@ export function TransactionForm({ initialData, onClose }: TransactionFormProps) 
             type="button"
             onClick={() => setType("expense")}
             className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-colors ${
-              type === "expense"
-                ? "bg-destructive text-white"
-                : "text-muted-foreground hover:text-white"
+              type === "expense" ? "bg-destructive text-white" : "text-muted-foreground hover:text-white"
             }`}
           >
             <ArrowUpRight className="w-4 h-4" /> Saída
@@ -102,9 +108,7 @@ export function TransactionForm({ initialData, onClose }: TransactionFormProps) 
             type="button"
             onClick={() => setType("income")}
             className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-colors ${
-              type === "income"
-                ? "bg-success text-white"
-                : "text-muted-foreground hover:text-white"
+              type === "income" ? "bg-success text-white" : "text-muted-foreground hover:text-white"
             }`}
           >
             <ArrowDownRight className="w-4 h-4" /> Entrada
@@ -115,7 +119,7 @@ export function TransactionForm({ initialData, onClose }: TransactionFormProps) 
           <div className="space-y-1">
             <label className="text-sm font-medium text-muted-foreground">Valor</label>
             <div className="relative">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground">R$</span>
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">R$</span>
               <input
                 type="number"
                 step="0.01"
@@ -157,48 +161,70 @@ export function TransactionForm({ initialData, onClose }: TransactionFormProps) 
           <label className="text-sm font-medium text-muted-foreground">Categoria</label>
 
           {isAddingCategory ? (
-            <div className="flex gap-2">
-              <input
-                type="text"
-                autoFocus
-                value={newCategoryName}
-                onChange={(e) => setNewCategoryName(e.target.value)}
-                className="flex-1 glass-input rounded-xl py-3 px-4"
-                placeholder="Nome da nova categoria"
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') { e.preventDefault(); handleAddCategory(); }
-                  if (e.key === 'Escape') setIsAddingCategory(false);
-                }}
-              />
-              <button
-                type="button"
-                onClick={handleAddCategory}
-                className="px-4 py-3 bg-primary text-primary-foreground rounded-xl font-semibold hover:bg-primary/90 transition-colors"
-              >
-                Criar
-              </button>
-              <button
-                type="button"
-                onClick={() => setIsAddingCategory(false)}
-                className="px-3 py-3 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-colors"
-              >
-                <X className="w-5 h-5" />
-              </button>
+            <div className="space-y-3">
+              <div className="flex gap-2">
+                <div className="flex-shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setShowIconPicker(v => !v)}
+                    title="Escolher ícone"
+                    className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors flex items-center justify-center"
+                  >
+                    <CategoryIcon
+                      category={newCategoryIcon ? { id: '', name: newCategoryName, icon: newCategoryIcon, createdAt: '' } : undefined}
+                      size="sm"
+                      className="w-8 h-8"
+                    />
+                  </button>
+                </div>
+                <input
+                  type="text"
+                  autoFocus
+                  value={newCategoryName}
+                  onChange={(e) => setNewCategoryName(e.target.value)}
+                  className="flex-1 glass-input rounded-xl py-3 px-4"
+                  placeholder="Nome da nova categoria"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') { e.preventDefault(); handleAddCategory(); }
+                    if (e.key === 'Escape') { setIsAddingCategory(false); setShowIconPicker(false); }
+                  }}
+                />
+                <button type="button" onClick={handleAddCategory}
+                  className="px-4 py-3 bg-primary text-primary-foreground rounded-xl font-semibold hover:bg-primary/90 transition-colors">
+                  Criar
+                </button>
+                <button type="button" onClick={() => { setIsAddingCategory(false); setShowIconPicker(false); }}
+                  className="px-3 py-3 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-colors">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              {showIconPicker && (
+                <CategoryIconPicker
+                  value={newCategoryIcon}
+                  onChange={setNewCategoryIcon}
+                  onClose={() => setShowIconPicker(false)}
+                />
+              )}
             </div>
           ) : (
             <div className="flex gap-2">
-              <select
-                value={categoryId}
-                onChange={(e) => { setCategoryId(e.target.value); setErrors(p => ({ ...p, category: undefined })); }}
-                className="flex-1 glass-input rounded-xl py-3 px-4 appearance-none cursor-pointer"
-              >
-                <option value="" disabled>Selecione uma categoria</option>
-                {categories.map((c) => (
-                  <option key={c.id} value={c.id} className="bg-background text-foreground">
-                    {c.name}
-                  </option>
-                ))}
-              </select>
+              <div className="flex-1 relative">
+                <div className="absolute left-3 top-1/2 -translate-y-1/2 z-10">
+                  <CategoryIcon category={selectedCategory} size="sm" />
+                </div>
+                <select
+                  value={categoryId}
+                  onChange={(e) => { setCategoryId(e.target.value); setErrors(p => ({ ...p, category: undefined })); }}
+                  className="w-full glass-input rounded-xl py-3 pl-12 pr-4 appearance-none cursor-pointer"
+                >
+                  <option value="" disabled>Selecione uma categoria</option>
+                  {categories.map((c) => (
+                    <option key={c.id} value={c.id} className="bg-background text-foreground">
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
               <button
                 type="button"
                 onClick={() => setIsAddingCategory(true)}

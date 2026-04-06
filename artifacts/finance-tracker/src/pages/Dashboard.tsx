@@ -15,6 +15,7 @@ import {
 import { formatCurrency } from "@/lib/utils";
 import { Wallet, TrendingUp, TrendingDown, PiggyBank, ArrowRight } from "lucide-react";
 import { Link } from "wouter";
+import { CategoryIcon } from "@/components/CategoryIcon";
 
 export default function Dashboard() {
   const { transactions, currentDate, categories } = useFinance();
@@ -81,7 +82,7 @@ export default function Dashboard() {
 
             <div className="space-y-5">
               <h3 className="text-lg font-display font-bold">Resumo por Categoria</h3>
-              <div className="glass-panel p-5 rounded-2xl space-y-4">
+              <div className="glass-panel p-5 rounded-2xl space-y-3">
                 {Object.keys(categoryStats).length === 0 ? (
                   <p className="text-muted-foreground text-center py-4 text-sm">Sem dados neste mês.</p>
                 ) : (
@@ -109,7 +110,7 @@ export default function Dashboard() {
                       return (
                         <div key={catId} className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
-                            <div className="w-1.5 h-7 rounded-full bg-primary/50" />
+                            <CategoryIcon category={category} size="sm" />
                             <div>
                               <p className="font-semibold text-sm">{category?.name || "Sem categoria"}</p>
                               <p className="text-xs text-muted-foreground">{stats.count} transaç{stats.count === 1 ? 'ão' : 'ões'}</p>

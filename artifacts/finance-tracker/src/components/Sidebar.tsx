@@ -19,9 +19,8 @@ export function Sidebar() {
         <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg shadow-primary/20">
           <Wallet className="text-white w-6 h-6" />
         </div>
-        <span className="font-display font-bold text-xl text-white tracking-tight">FinTrack</span>
+        <span className="font-display font-bold text-xl text-white tracking-tight">Meu Deneros</span>
       </div>
-
       <nav className="flex-1 px-4 py-6 space-y-1">
         {navItems.map((item) => {
           const isActive = location === item.href;
@@ -42,7 +41,6 @@ export function Sidebar() {
           );
         })}
       </nav>
-
       <div className="p-6">
         <div className="p-4 rounded-xl bg-white/5 border border-white/5">
           <p className="text-xs text-muted-foreground font-medium mb-1">Armazenamento Local</p>

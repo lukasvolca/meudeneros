@@ -1,9 +1,9 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap');
 @import "tailwindcss";
 
 @theme inline {
   --font-sans: 'Inter', sans-serif;
-  --font-display: 'Outfit', sans-serif;
+  --font-display: 'Manrope', sans-serif;
 
   --color-background: hsl(var(--background));
   --color-foreground: hsl(var(--foreground));
@@ -29,37 +29,42 @@
 }
 
 :root {
-  /* Premium Dark Theme */
-  --background: 225 21% 7%;      /* #0f1117 */
-  --foreground: 210 40% 98%;     /* #f8fafc */
+  /* ── Neutral / backgrounds ── */
+  --background: 0 0% 7%;          /* #121212 */
+  --foreground: 0 0% 96%;         /* #f5f5f5 */
 
-  --card: 230 23% 12%;           /* Slightly lighter than bg #171923 */
-  --card-foreground: 210 40% 98%;
+  --card: 0 0% 10%;               /* #1a1a1a */
+  --card-foreground: 0 0% 96%;
 
-  --popover: 230 23% 15%;        /* #1e2130 */
-  --popover-foreground: 210 40% 98%;
+  --popover: 0 0% 12%;            /* #1e1e1e */
+  --popover-foreground: 0 0% 96%;
 
-  --primary: 238 87% 65%;        /* Elegant Indigo/Blue */
-  --primary-foreground: 210 40% 98%;
+  /* ── Primary — #4ADE80 green ── */
+  --primary: 142 69% 58%;
+  --primary-foreground: 0 0% 7%;  /* dark text on green */
 
-  --secondary: 226 24% 18%;      /* #232738 */
-  --secondary-foreground: 210 40% 98%;
+  /* ── Secondary surface ── */
+  --secondary: 0 0% 15%;          /* #262626 */
+  --secondary-foreground: 0 0% 96%;
 
-  --muted: 226 24% 18%;
-  --muted-foreground: 215 16% 65%; /* #94a3b8 */
+  --muted: 0 0% 15%;
+  --muted-foreground: 0 0% 50%;   /* #808080 */
 
-  --accent: 238 87% 65%;
-  --accent-foreground: 210 40% 98%;
+  /* ── Accent — #FFB47F peach ── */
+  --accent: 28 100% 74%;
+  --accent-foreground: 0 0% 7%;
 
-  --destructive: 0 84% 60%;      /* Bright Red/Rose #f43f5e */
-  --destructive-foreground: 210 40% 98%;
+  /* ── Destructive — #F87171 coral ── */
+  --destructive: 0 90% 71%;
+  --destructive-foreground: 0 0% 7%;
 
-  --success: 142 71% 45%;        /* Bright Green #22c55e */
-  --success-foreground: 225 21% 7%;
+  /* ── Success — same green as primary ── */
+  --success: 142 69% 58%;
+  --success-foreground: 0 0% 7%;
 
-  --border: 226 24% 18%;         /* Subtle dark borders */
-  --input: 226 24% 18%;
-  --ring: 238 87% 65%;
+  --border: 0 0% 18%;             /* #2e2e2e */
+  --input: 0 0% 15%;
+  --ring: 142 69% 58%;
 }
 
 @layer base {
@@ -75,8 +80,7 @@
     font-family: var(--font-display);
     @apply tracking-tight font-bold;
   }
-  
-  /* Custom Scrollbar for a premium feel */
+
   ::-webkit-scrollbar {
     width: 8px;
     height: 8px;
@@ -91,9 +95,9 @@
 
 /* Glassmorphism utilities */
 .glass-panel {
-  @apply bg-card/60 backdrop-blur-xl border border-white/[0.05] shadow-2xl shadow-black/50;
+  @apply bg-card/80 backdrop-blur-xl border border-white/[0.05] shadow-2xl shadow-black/60;
 }
 
 .glass-input {
-  @apply bg-black/20 border border-white/10 focus:border-primary/50 focus:bg-black/40 transition-all duration-300;
+  @apply bg-black/30 border border-white/10 focus:border-primary/60 focus:bg-black/40 transition-all duration-300 outline-none;
 }

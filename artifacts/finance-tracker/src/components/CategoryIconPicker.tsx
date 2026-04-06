@@ -37,6 +37,7 @@ export const CATEGORY_ICONS: { name: string; label: string }[] = [
   { name: "Sun", label: "Lazer" },
   { name: "Tag", label: "Outros" },
   { name: "Cat", label: "Pet" },
+  { name: "Skull", label: "Caveira" },
 ];
 
 interface CategoryIconPickerProps {

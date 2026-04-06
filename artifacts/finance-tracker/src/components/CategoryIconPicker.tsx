@@ -54,8 +54,23 @@ export function CategoryIconPicker({ value, onChange, onClose }: CategoryIconPic
 
     const reader = new FileReader();
     reader.onload = (ev) => {
-      const result = ev.target?.result as string;
-      if (result) onChange(result);
+      const img = new window.Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        const SIZE = 64;
+        canvas.width = SIZE;
+        canvas.height = SIZE;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return;
+        // Center-crop to square before resizing
+        const minSide = Math.min(img.width, img.height);
+        const sx = (img.width - minSide) / 2;
+        const sy = (img.height - minSide) / 2;
+        ctx.drawImage(img, sx, sy, minSide, minSide, 0, 0, SIZE, SIZE);
+        const compressed = canvas.toDataURL("image/jpeg", 0.82);
+        onChange(compressed);
+      };
+      img.src = ev.target?.result as string;
     };
     reader.readAsDataURL(file);
   };

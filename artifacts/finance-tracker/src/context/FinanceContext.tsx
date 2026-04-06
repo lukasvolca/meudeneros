@@ -36,11 +36,19 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
   const [currentDate, setCurrentDate] = useState(new Date());
 
   useEffect(() => {
-    localStorage.setItem("finance_transactions", JSON.stringify(transactions));
+    try {
+      localStorage.setItem("finance_transactions", JSON.stringify(transactions));
+    } catch (e) {
+      console.warn("Não foi possível salvar transações:", e);
+    }
   }, [transactions]);
 
   useEffect(() => {
-    localStorage.setItem("finance_categories", JSON.stringify(categories));
+    try {
+      localStorage.setItem("finance_categories", JSON.stringify(categories));
+    } catch (e) {
+      console.warn("Não foi possível salvar categorias (armazenamento cheio):", e);
+    }
   }, [categories]);
 
   const addTransaction = (txData: Omit<Transaction, "id" | "createdAt">) => {

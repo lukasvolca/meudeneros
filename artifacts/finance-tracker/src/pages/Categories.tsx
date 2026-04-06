@@ -69,8 +69,8 @@ export default function Categories() {
             <span className="text-xs text-muted-foreground">{categories.length} categoria{categories.length !== 1 ? 's' : ''}</span>
           </div>
 
+          {/* Chips row */}
           <div className="flex flex-wrap gap-2">
-            {/* "All" tab */}
             <button
               onClick={() => setSelectedCategory("all")}
               className={cn(
@@ -86,50 +86,39 @@ export default function Categories() {
             {categories.map((cat) => (
               <div key={cat.id}>
                 {editingCatId === cat.id ? (
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-1.5 bg-white/10 border border-white/20 rounded-2xl px-3 py-2">
-                      {/* Icon preview + change button */}
-                      <button
-                        type="button"
-                        onClick={() => setShowIconPicker(v => !v)}
-                        title="Alterar ícone"
-                        className="flex-shrink-0"
-                      >
-                        <CategoryIcon
-                          category={{ ...cat, icon: editingIcon || cat.icon }}
-                          size="sm"
-                        />
-                      </button>
-                      <input
-                        autoFocus
-                        value={editingName}
-                        onChange={e => setEditingName(e.target.value)}
-                        onKeyDown={e => { if (e.key === 'Enter') handleSaveEdit(); if (e.key === 'Escape') handleCancelEdit(); }}
-                        className="bg-transparent outline-none text-sm font-medium w-28 text-white"
+                  /* Editing chip — just name input + icon preview + actions, NO inline picker */
+                  <div className="flex items-center gap-1.5 bg-white/10 border border-white/20 rounded-2xl px-3 py-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowIconPicker(v => !v)}
+                      title="Alterar ícone"
+                      className="flex-shrink-0"
+                    >
+                      <CategoryIcon
+                        category={{ ...cat, icon: editingIcon || cat.icon }}
+                        size="sm"
                       />
-                      <button
-                        onClick={() => setShowIconPicker(v => !v)}
-                        className="p-1 hover:bg-white/10 rounded-lg transition-colors"
-                        title="Alterar ícone"
-                      >
-                        <Image className="w-3.5 h-3.5 text-muted-foreground" />
-                      </button>
-                      <button onClick={handleSaveEdit} className="text-success hover:text-success/80 transition-colors p-0.5">
-                        <Check className="w-3.5 h-3.5" />
-                      </button>
-                      <button onClick={handleCancelEdit} className="text-muted-foreground hover:text-white transition-colors p-0.5">
-                        <X className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                    {showIconPicker && (
-                      <div className="absolute z-50 mt-1">
-                        <CategoryIconPicker
-                          value={editingIcon || cat.icon}
-                          onChange={setEditingIcon}
-                          onClose={() => setShowIconPicker(false)}
-                        />
-                      </div>
-                    )}
+                    </button>
+                    <input
+                      autoFocus
+                      value={editingName}
+                      onChange={e => setEditingName(e.target.value)}
+                      onKeyDown={e => { if (e.key === 'Enter') handleSaveEdit(); if (e.key === 'Escape') handleCancelEdit(); }}
+                      className="bg-transparent outline-none text-sm font-medium w-28 text-white"
+                    />
+                    <button
+                      onClick={() => setShowIconPicker(v => !v)}
+                      className="p-1 hover:bg-white/10 rounded-lg transition-colors"
+                      title="Alterar ícone"
+                    >
+                      <Image className="w-3.5 h-3.5 text-muted-foreground" />
+                    </button>
+                    <button onClick={handleSaveEdit} className="text-success hover:text-success/80 transition-colors p-0.5">
+                      <Check className="w-3.5 h-3.5" />
+                    </button>
+                    <button onClick={handleCancelEdit} className="text-muted-foreground hover:text-white transition-colors p-0.5">
+                      <X className="w-3.5 h-3.5" />
+                    </button>
                   </div>
                 ) : (
                   <div className={cn(
@@ -173,6 +162,15 @@ export default function Categories() {
               <p className="text-sm text-muted-foreground py-2">Nenhuma categoria criada. Adicione uma ao registrar uma transação.</p>
             )}
           </div>
+
+          {/* Icon picker — rendered BELOW chips, never overlapping */}
+          {editingCatId && showIconPicker && (
+            <CategoryIconPicker
+              value={editingIcon}
+              onChange={setEditingIcon}
+              onClose={() => setShowIconPicker(false)}
+            />
+          )}
         </div>
 
         {/* Stats */}

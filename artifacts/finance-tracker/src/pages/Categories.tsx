@@ -86,8 +86,8 @@ export default function Categories() {
             {categories.map((cat) => (
               <div key={cat.id}>
                 {editingCatId === cat.id ? (
-                  /* Editing chip — just name input + icon preview + actions, NO inline picker */
-                  <div className="flex items-center gap-1.5 bg-white/10 border border-white/20 rounded-2xl px-3 py-2">
+                  /* Editing chip */
+                  <div className="flex items-center gap-2 bg-white/10 border border-white/20 rounded-2xl p-2 pr-3">
                     <button
                       type="button"
                       onClick={() => setShowIconPicker(v => !v)}
@@ -96,58 +96,74 @@ export default function Categories() {
                     >
                       <CategoryIcon
                         category={{ ...cat, icon: editingIcon || cat.icon }}
-                        size="sm"
+                        size="xl"
                       />
                     </button>
-                    <input
-                      autoFocus
-                      value={editingName}
-                      onChange={e => setEditingName(e.target.value)}
-                      onKeyDown={e => { if (e.key === 'Enter') handleSaveEdit(); if (e.key === 'Escape') handleCancelEdit(); }}
-                      className="bg-transparent outline-none text-sm font-medium w-28 text-white"
-                    />
-                    <button
-                      onClick={() => setShowIconPicker(v => !v)}
-                      className="p-1 hover:bg-white/10 rounded-lg transition-colors"
-                      title="Alterar ícone"
-                    >
-                      <Image className="w-3.5 h-3.5 text-muted-foreground" />
-                    </button>
-                    <button onClick={handleSaveEdit} className="text-success hover:text-success/80 transition-colors p-0.5">
-                      <Check className="w-3.5 h-3.5" />
-                    </button>
-                    <button onClick={handleCancelEdit} className="text-muted-foreground hover:text-white transition-colors p-0.5">
-                      <X className="w-3.5 h-3.5" />
-                    </button>
+                    <div className="flex flex-col gap-1 min-w-0">
+                      <input
+                        autoFocus
+                        value={editingName}
+                        onChange={e => setEditingName(e.target.value)}
+                        onKeyDown={e => { if (e.key === 'Enter') handleSaveEdit(); if (e.key === 'Escape') handleCancelEdit(); }}
+                        className="bg-transparent outline-none text-sm font-semibold text-white w-28"
+                      />
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => setShowIconPicker(v => !v)}
+                          className="flex items-center gap-1 text-xs text-muted-foreground hover:text-white transition-colors"
+                          title="Alterar ícone"
+                        >
+                          <Image className="w-3 h-3" /> ícone
+                        </button>
+                      </div>
+                    </div>
+                    <div className="flex flex-col gap-1 ml-1">
+                      <button onClick={handleSaveEdit} className="p-1 rounded-lg bg-success/10 text-success hover:bg-success/20 transition-colors">
+                        <Check className="w-3.5 h-3.5" />
+                      </button>
+                      <button onClick={handleCancelEdit} className="p-1 rounded-lg bg-white/5 text-muted-foreground hover:text-white transition-colors">
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   </div>
                 ) : (
                   <div className={cn(
-                    "group flex items-center gap-1 rounded-full transition-colors",
+                    "group relative flex items-center gap-0 rounded-2xl transition-colors overflow-hidden border",
                     selectedCategory === cat.id
-                      ? "bg-primary/10 border border-primary/30"
-                      : "bg-white/5 border border-white/5 hover:bg-white/8"
+                      ? "bg-primary/10 border-primary/30"
+                      : "bg-white/5 border-white/5 hover:bg-white/8 hover:border-white/10"
                   )}>
+                    {/* Icon — fills full height of the chip */}
+                    <button
+                      onClick={() => setSelectedCategory(cat.id)}
+                      className="flex-shrink-0 p-2"
+                    >
+                      <CategoryIcon category={cat} size="xl" />
+                    </button>
+
+                    {/* Name */}
                     <button
                       onClick={() => setSelectedCategory(cat.id)}
                       className={cn(
-                        "flex items-center gap-2 px-3 py-2 font-medium text-sm whitespace-nowrap rounded-l-full",
-                        selectedCategory === cat.id ? "text-primary" : "text-muted-foreground hover:text-white"
+                        "flex-1 pr-2 font-semibold text-sm whitespace-nowrap",
+                        selectedCategory === cat.id ? "text-primary" : "text-muted-foreground group-hover:text-white"
                       )}
                     >
-                      <CategoryIcon category={cat} size="sm" />
                       {cat.name}
                     </button>
-                    <div className="flex items-center pr-2 gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+
+                    {/* Edit / Delete — appear on hover */}
+                    <div className="flex flex-col gap-0.5 pr-2 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button
                         onClick={() => handleStartEdit(cat.id, cat.name, cat.icon)}
-                        className="p-1 rounded-full hover:bg-white/10 text-muted-foreground hover:text-white transition-colors"
+                        className="p-1 rounded-lg hover:bg-white/10 text-muted-foreground hover:text-white transition-colors"
                         title="Editar"
                       >
                         <Edit2 className="w-3 h-3" />
                       </button>
                       <button
                         onClick={() => handleDelete(cat.id, cat.name)}
-                        className="p-1 rounded-full hover:bg-destructive/20 text-muted-foreground hover:text-destructive transition-colors"
+                        className="p-1 rounded-lg hover:bg-destructive/20 text-muted-foreground hover:text-destructive transition-colors"
                         title="Excluir"
                       >
                         <Trash2 className="w-3 h-3" />

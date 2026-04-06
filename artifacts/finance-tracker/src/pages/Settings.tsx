@@ -93,11 +93,7 @@ export default function Settings() {
             <Info className="w-5 h-5 text-muted-foreground" />
             <h3 className="text-lg font-display font-bold">Sobre o Meu Deneros</h3>
           </div>
-          <p className="text-sm text-muted-foreground leading-relaxed">
-            FinTrack é um controle financeiro pessoal premium, com foco em privacidade.
-            Todos os dados ficam exclusivamente no seu navegador, sem servidores externos.
-            Desenvolvido com React, Vite e Tailwind CSS.
-          </p>
+          <p className="text-sm text-muted-foreground leading-relaxed">Meu Deneros é um controle financeiro pessoal premium, com foco em privacidade. Todos os dados ficam exclusivamente no seu navegador, sem servidores externos. Desenvolvido com React, Vite e Tailwind CSS.</p>
           <div className="pt-4 text-xs text-white/30 font-mono">
             Versão 1.0.0
           </div>

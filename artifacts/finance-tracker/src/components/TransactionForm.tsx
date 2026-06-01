@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useFinance } from "@/context/FinanceContext";
-import { Plus, X, ArrowDownRight, ArrowUpRight, ChevronDown } from "lucide-react";
+import { Plus, X, ArrowDownRight, ArrowUpRight } from "lucide-react";
 import { format } from "date-fns";
 import { CategoryIconPicker } from "./CategoryIconPicker";
 import { CategoryIcon } from "./CategoryIcon";
@@ -10,11 +10,29 @@ interface TransactionFormProps {
   onClose?: () => void;
 }
 
+function formatAmountMask(raw: string): string {
+  let d = raw.replace(/\D/g, "");
+  if (!d) return "";
+  while (d.length < 3) d = "0" + d;
+  const cents = d.slice(-2);
+  const integer = (d.slice(0, -2).replace(/^0+/, "") || "0").replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  return integer + "," + cents;
+}
+
+function parseAmount(masked: string): number {
+  return parseFloat(masked.replace(/\./g, "").replace(",", ".")) || 0;
+}
+
+function initAmountDisplay(value?: number): string {
+  if (!value || value <= 0) return "";
+  return formatAmountMask(String(Math.round(value * 100)));
+}
+
 export function TransactionForm({ initialData, onClose }: TransactionFormProps) {
   const { categories, addCategory, addTransaction, updateTransaction } = useFinance();
 
   const [type, setType] = useState<"income" | "expense">(initialData?.type || "expense");
-  const [amount, setAmount] = useState(initialData?.amount?.toString() || "");
+  const [amount, setAmount] = useState(initAmountDisplay(initialData?.amount));
   const [title, setTitle] = useState(initialData?.title || "");
   const [date, setDate] = useState(
     initialData?.date
@@ -29,10 +47,22 @@ export function TransactionForm({ initialData, onClose }: TransactionFormProps) 
   const [newCategoryIcon, setNewCategoryIcon] = useState("");
   const [showIconPicker, setShowIconPicker] = useState(false);
 
+  // Typeless categories show only for expenses (they're usually expense categories)
+  // Income mode shows only explicitly income-tagged categories
+  const filteredCategories = categories.filter(c => c.type === type || (!c.type && type === "expense"));
+
+  const displayDate = date ? date.split("-").reverse().join("/") : "";
+
+  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const masked = formatAmountMask(e.target.value);
+    setAmount(masked);
+    setErrors(p => ({ ...p, amount: undefined }));
+  };
+
   const validate = () => {
     const e: typeof errors = {};
     if (!title.trim()) e.title = "Informe um nome para a transação.";
-    if (!amount || parseFloat(amount) <= 0) e.amount = "Informe um valor válido.";
+    if (!amount || parseAmount(amount) <= 0) e.amount = "Informe um valor válido.";
     if (!categoryId) e.category = "Selecione uma categoria.";
     setErrors(e);
     return Object.keys(e).length === 0;
@@ -45,7 +75,7 @@ export function TransactionForm({ initialData, onClose }: TransactionFormProps) 
     const selectedCategory = categories.find((c) => c.id === categoryId);
     const txData = {
       type,
-      amount: parseFloat(amount),
+      amount: parseAmount(amount),
       title: title.trim(),
       date: new Date(date + 'T12:00:00').toISOString(),
       categoryId,
@@ -68,7 +98,7 @@ export function TransactionForm({ initialData, onClose }: TransactionFormProps) 
 
   const handleAddCategory = () => {
     if (newCategoryName.trim()) {
-      const id = addCategory(newCategoryName.trim(), newCategoryIcon || undefined);
+      const id = addCategory(newCategoryName.trim(), newCategoryIcon || undefined, type);
       setCategoryId(id);
       setIsAddingCategory(false);
       setNewCategoryName("");
@@ -116,16 +146,16 @@ export function TransactionForm({ initialData, onClose }: TransactionFormProps) 
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Valor com máscara BR */}
           <div className="space-y-1">
             <label className="text-sm font-medium text-muted-foreground">Valor</label>
             <div className="relative">
               <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">R$</span>
               <input
-                type="number"
-                step="0.01"
-                min="0"
+                type="text"
+                inputMode="decimal"
                 value={amount}
-                onChange={(e) => { setAmount(e.target.value); setErrors(p => ({ ...p, amount: undefined })); }}
+                onChange={handleAmountChange}
                 className="w-full glass-input rounded-xl py-3 pl-10 pr-4 text-lg font-semibold placeholder:text-white/20"
                 placeholder="0,00"
               />
@@ -133,15 +163,30 @@ export function TransactionForm({ initialData, onClose }: TransactionFormProps) 
             {errors.amount && <p className="text-xs text-destructive">{errors.amount}</p>}
           </div>
 
+          {/* Data com display DD/MM/AAAA */}
           <div className="space-y-1">
             <label className="text-sm font-medium text-muted-foreground">Data</label>
-            <input
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              className="w-full glass-input rounded-xl py-3 px-4 text-white"
-              style={{ colorScheme: 'dark' }}
-            />
+            <div className="relative">
+              <input
+                type="text"
+                readOnly
+                value={displayDate}
+                onClick={() => {
+                  const picker = document.getElementById("__date_picker") as HTMLInputElement | null;
+                  if (picker?.showPicker) picker.showPicker();
+                }}
+                className="w-full glass-input rounded-xl py-3 px-4 text-white cursor-pointer"
+                placeholder="DD/MM/AAAA"
+              />
+              <input
+                type="date"
+                id="__date_picker"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                style={{ position: "absolute", opacity: 0, width: "100%", height: "100%", top: 0, left: 0, pointerEvents: "none" }}
+                tabIndex={-1}
+              />
+            </div>
           </div>
         </div>
 
@@ -218,7 +263,7 @@ export function TransactionForm({ initialData, onClose }: TransactionFormProps) 
                   className="w-full glass-input rounded-xl py-3 pl-12 pr-4 appearance-none cursor-pointer"
                 >
                   <option value="" disabled>Selecione uma categoria</option>
-                  {categories.map((c) => (
+                  {filteredCategories.map((c) => (
                     <option key={c.id} value={c.id} className="bg-background text-foreground">
                       {c.name}
                     </option>

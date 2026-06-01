@@ -2,22 +2,32 @@ import { Layout } from "@/components/Layout";
 import { TransactionList } from "@/components/TransactionList";
 import { useFinance } from "@/context/FinanceContext";
 import { formatCurrency, cn } from "@/lib/utils";
+import { filterTransactionsByMonth } from "@/lib/finance";
 import { useState } from "react";
-import { PieChart, Edit2, Trash2, X, Check, Image } from "lucide-react";
+import { PieChart, Edit2, Trash2, X, Check, Image, Search } from "lucide-react";
 import { CategoryIcon } from "@/components/CategoryIcon";
 import { CategoryIconPicker } from "@/components/CategoryIconPicker";
 
 export default function Categories() {
-  const { transactions, categories, deleteCategory, updateCategory } = useFinance();
+  const { transactions, categories, deleteCategory, updateCategory, currentDate } = useFinance();
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [typeFilter, setTypeFilter] = useState<"all" | "expense" | "income">("all");
+  const [searchQuery, setSearchQuery] = useState("");
   const [editingCatId, setEditingCatId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState("");
   const [editingIcon, setEditingIcon] = useState("");
   const [showIconPicker, setShowIconPicker] = useState(false);
 
-  const filteredTransactions = selectedCategory === "all"
-    ? transactions
-    : transactions.filter(t => t.categoryId === selectedCategory);
+  const monthTransactions = filterTransactionsByMonth(transactions, currentDate.getMonth(), currentDate.getFullYear());
+
+  const filteredTransactions = monthTransactions
+    .filter(t => selectedCategory === "all" || t.categoryId === selectedCategory)
+    .filter(t => typeFilter === "all" || t.type === typeFilter)
+    .filter(t => {
+      if (!searchQuery.trim()) return true;
+      const q = searchQuery.toLowerCase();
+      return t.title.toLowerCase().includes(q) || (t.categoryName ?? "").toLowerCase().includes(q);
+    });
 
   const sortedFiltered = [...filteredTransactions].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
@@ -69,8 +79,21 @@ export default function Categories() {
             <span className="text-xs text-muted-foreground">{categories.length} categoria{categories.length !== 1 ? 's' : ''}</span>
           </div>
 
+          {/* Dropdown selector */}
+          <select
+            value={selectedCategory}
+            onChange={(e) => setSelectedCategory(e.target.value)}
+            className="__cat-select w-full glass-input rounded-xl py-2.5 px-4 text-white text-sm cursor-pointer"
+            style={{ colorScheme: 'dark' }}
+          >
+            <option value="all">Todas as categorias</option>
+            {categories.map(c => (
+              <option key={c.id} value={c.id}>{c.name}</option>
+            ))}
+          </select>
+
           {/* Chips row */}
-          <div className="flex flex-wrap gap-2">
+          <div className="__cat-pills flex flex-wrap gap-2">
             <button
               onClick={() => setSelectedCategory("all")}
               className={cn(
@@ -187,6 +210,35 @@ export default function Categories() {
               onClose={() => setShowIconPicker(false)}
             />
           )}
+        </div>
+
+        {/* Search */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+          <input
+            type="text"
+            placeholder="Buscar por título ou categoria..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-sm text-white placeholder:text-muted-foreground focus:outline-none focus:border-primary/60 focus:bg-white/8 transition-colors"
+          />
+        </div>
+
+        {/* Type filter */}
+        <div className="flex items-center gap-2">
+          {(["all", "expense", "income"] as const).map(f => (
+            <button
+              key={f}
+              onClick={() => setTypeFilter(f)}
+              className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                typeFilter === f
+                  ? f === "all" ? "bg-white/15 text-white" : f === "expense" ? "bg-destructive/20 text-destructive" : "bg-success/20 text-success"
+                  : "text-muted-foreground hover:text-white"
+              }`}
+            >
+              {f === "all" ? "Todos" : f === "expense" ? "Saídas" : "Entradas"}
+            </button>
+          ))}
         </div>
 
         {/* Stats */}

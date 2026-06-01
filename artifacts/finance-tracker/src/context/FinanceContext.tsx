@@ -10,7 +10,7 @@ interface FinanceContextType {
   addTransaction: (tx: Omit<Transaction, "id" | "createdAt">) => void;
   updateTransaction: (id: string, tx: Partial<Omit<Transaction, "id" | "createdAt">>) => void;
   deleteTransaction: (id: string) => void;
-  addCategory: (name: string, icon?: string) => string;
+  addCategory: (name: string, icon?: string, type?: "income" | "expense") => string;
   updateCategory: (id: string, updates: { name?: string; icon?: string }) => void;
   deleteCategory: (id: string) => void;
   clearAllData: () => void;
@@ -82,9 +82,9 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
     setTransactions((prev) => prev.filter((tx) => tx.id !== id));
   };
 
-  const addCategory = (name: string, icon?: string) => {
+  const addCategory = (name: string, icon?: string, type?: "income" | "expense") => {
     const id = generateId();
-    const newCat: Category = { id, name, icon, createdAt: new Date().toISOString() };
+    const newCat: Category = { id, name, icon, type, createdAt: new Date().toISOString() };
     setCategories((prev) => [...prev, newCat]);
     return id;
   };

@@ -109,7 +109,7 @@ export function TransactionList({ transactions, emptyMessage = "Nenhuma transaç
                     <div className="flex items-center gap-1">
                       <button
                         onClick={() => setEditingId(tx.id)}
-                        className="p-2 rounded-lg hover:bg-white/10 text-muted-foreground hover:text-white transition-colors"
+                        className="p-2 rounded-lg bg-white/10 hover:bg-white/20 text-white/70 hover:text-white transition-colors"
                         title="Editar"
                       >
                         <Edit2 className="w-4 h-4" />
@@ -118,7 +118,7 @@ export function TransactionList({ transactions, emptyMessage = "Nenhuma transaç
                         onClick={() => {
                           if (confirm('Excluir esta transação?')) deleteTransaction(tx.id);
                         }}
-                        className="p-2 rounded-lg hover:bg-destructive/20 text-muted-foreground hover:text-destructive transition-colors"
+                        className="p-2 rounded-lg bg-white/10 hover:bg-destructive/30 text-white/70 hover:text-destructive transition-colors"
                         title="Excluir"
                       >
                         <Trash2 className="w-4 h-4" />

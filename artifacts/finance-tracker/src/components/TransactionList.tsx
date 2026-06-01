@@ -106,7 +106,7 @@ export function TransactionList({ transactions, emptyMessage = "Nenhuma transaç
                       {isIncome ? "+" : "-"}{formatCurrency(tx.amount)}
                     </span>
 
-                    <div className="hidden group-hover:flex items-center gap-1">
+                    <div className="flex md:hidden md:group-hover:flex items-center gap-1">
                       <button
                         onClick={() => setEditingId(tx.id)}
                         className="p-2 rounded-lg hover:bg-white/10 text-muted-foreground hover:text-white transition-colors"

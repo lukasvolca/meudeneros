@@ -20,6 +20,16 @@ export interface Category {
   createdAt: string;
 }
 
+export interface Bill {
+  id: string;
+  name: string;
+  amount: number;
+  type: "fixed" | "variable";
+  paid: boolean;
+  paidAt: string | null;
+  createdAt: string;
+}
+
 export function filterTransactionsByMonth(
   transactions: Transaction[],
   month: number, // 0-11

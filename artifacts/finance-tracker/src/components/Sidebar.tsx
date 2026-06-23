@@ -1,11 +1,12 @@
 import { Link, useLocation } from "wouter";
-import { LayoutDashboard, Receipt, Tags, Settings, Wallet } from "lucide-react";
+import { LayoutDashboard, Receipt, Tags, FileText, Settings, Wallet } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/transactions", label: "Transações", icon: Receipt },
   { href: "/categories", label: "Categorias", icon: Tags },
+  { href: "/bills", label: "Contas do Mês", icon: FileText },
   { href: "/settings", label: "Configurações", icon: Settings },
 ];
 

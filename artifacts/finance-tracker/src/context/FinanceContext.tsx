@@ -1,10 +1,11 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
-import { Transaction, Category } from "../lib/finance";
+import { Transaction, Category, Bill } from "../lib/finance";
 import { generateId } from "../lib/utils";
 
 interface FinanceContextType {
   transactions: Transaction[];
   categories: Category[];
+  bills: Bill[];
   currentDate: Date;
   setCurrentDate: (date: Date) => void;
   addTransaction: (tx: Omit<Transaction, "id" | "createdAt">) => void;
@@ -13,6 +14,10 @@ interface FinanceContextType {
   addCategory: (name: string, icon?: string, type?: "income" | "expense") => string;
   updateCategory: (id: string, updates: { name?: string; icon?: string }) => void;
   deleteCategory: (id: string) => void;
+  addBill: (bill: Omit<Bill, "id" | "createdAt" | "paid" | "paidAt">) => void;
+  updateBill: (id: string, updates: Partial<Bill>) => void;
+  deleteBill: (id: string) => void;
+  toggleBillPaid: (id: string) => void;
   clearAllData: () => void;
 }
 
@@ -29,6 +34,13 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
   const [categories, setCategories] = useState<Category[]>(() => {
     try {
       const saved = localStorage.getItem("finance_categories");
+      return saved ? JSON.parse(saved) : [];
+    } catch { return []; }
+  });
+
+  const [bills, setBills] = useState<Bill[]>(() => {
+    try {
+      const saved = localStorage.getItem("finance_bills");
       return saved ? JSON.parse(saved) : [];
     } catch { return []; }
   });
@@ -50,6 +62,14 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
       console.warn("Não foi possível salvar categorias (armazenamento cheio):", e);
     }
   }, [categories]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem("finance_bills", JSON.stringify(bills));
+    } catch (e) {
+      console.warn("Não foi possível salvar contas:", e);
+    }
+  }, [bills]);
 
   const addTransaction = (txData: Omit<Transaction, "id" | "createdAt">) => {
     const category = categories.find((c) => c.id === txData.categoryId);
@@ -102,9 +122,39 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
     setCategories((prev) => prev.filter((c) => c.id !== id));
   };
 
+  const addBill = (billData: Omit<Bill, "id" | "createdAt" | "paid" | "paidAt">) => {
+    const newBill: Bill = {
+      ...billData,
+      id: generateId(),
+      paid: false,
+      paidAt: null,
+      createdAt: new Date().toISOString(),
+    };
+    setBills((prev) => [...prev, newBill]);
+  };
+
+  const updateBill = (id: string, updates: Partial<Bill>) => {
+    setBills((prev) => prev.map((b) => (b.id === id ? { ...b, ...updates } : b)));
+  };
+
+  const deleteBill = (id: string) => {
+    setBills((prev) => prev.filter((b) => b.id !== id));
+  };
+
+  const toggleBillPaid = (id: string) => {
+    setBills((prev) =>
+      prev.map((b) =>
+        b.id === id
+          ? { ...b, paid: !b.paid, paidAt: !b.paid ? new Date().toISOString() : null }
+          : b
+      )
+    );
+  };
+
   const clearAllData = () => {
     setTransactions([]);
     setCategories([]);
+    setBills([]);
   };
 
   return (
@@ -112,6 +162,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
       value={{
         transactions,
         categories,
+        bills,
         currentDate,
         setCurrentDate,
         addTransaction,
@@ -120,6 +171,10 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
         addCategory,
         updateCategory,
         deleteCategory,
+        addBill,
+        updateBill,
+        deleteBill,
+        toggleBillPaid,
         clearAllData,
       }}
     >

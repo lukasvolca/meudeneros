@@ -7,6 +7,7 @@ import { FinanceProvider } from "@/context/FinanceContext";
 const Dashboard = lazy(() => import("@/pages/Dashboard"));
 const Transactions = lazy(() => import("@/pages/Transactions"));
 const Categories = lazy(() => import("@/pages/Categories"));
+const Bills = lazy(() => import("@/pages/Bills"));
 const Settings = lazy(() => import("@/pages/Settings"));
 const NotFound = lazy(() => import("@/pages/not-found"));
 
@@ -17,6 +18,7 @@ function Router() {
         <Route path="/" component={Dashboard} />
         <Route path="/transactions" component={Transactions} />
         <Route path="/categories" component={Categories} />
+        <Route path="/bills" component={Bills} />
         <Route path="/reports" component={Categories} />
         <Route path="/settings" component={Settings} />
         <Route component={NotFound} />

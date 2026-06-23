@@ -29,7 +29,7 @@ function initAmountDisplay(value?: number): string {
 }
 
 export function TransactionForm({ initialData, onClose }: TransactionFormProps) {
-  const { categories, addCategory, addTransaction, updateTransaction } = useFinance();
+  const { categories, addCategory, addTransaction, updateTransaction, addBill } = useFinance();
 
   const [type, setType] = useState<"income" | "expense">(initialData?.type || "expense");
   const [amount, setAmount] = useState(initAmountDisplay(initialData?.amount));
@@ -40,7 +40,11 @@ export function TransactionForm({ initialData, onClose }: TransactionFormProps) 
       : format(new Date(), 'yyyy-MM-dd')
   );
   const [categoryId, setCategoryId] = useState(initialData?.categoryId || (categories[0]?.id || ""));
+  const [billType, setBillType] = useState<"fixed" | "variable" | null>(null);
   const [errors, setErrors] = useState<{ title?: string; amount?: string; category?: string }>({});
+
+  const selectedCatName = categories.find(c => c.id === categoryId)?.name || "";
+  const isContasCategory = /^contas?$/i.test(selectedCatName.trim());
 
   const [isAddingCategory, setIsAddingCategory] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
@@ -88,10 +92,15 @@ export function TransactionForm({ initialData, onClose }: TransactionFormProps) 
       addTransaction(txData);
     }
 
+    if (billType && isContasCategory) {
+      addBill({ name: title.trim(), amount: parseAmount(amount), type: billType });
+    }
+
     if (onClose) onClose();
     if (!initialData) {
       setAmount("");
       setTitle("");
+      setBillType(null);
       setErrors({});
     }
   };
@@ -259,7 +268,7 @@ export function TransactionForm({ initialData, onClose }: TransactionFormProps) 
                 </div>
                 <select
                   value={categoryId}
-                  onChange={(e) => { setCategoryId(e.target.value); setErrors(p => ({ ...p, category: undefined })); }}
+                  onChange={(e) => { setCategoryId(e.target.value); setBillType(null); setErrors(p => ({ ...p, category: undefined })); }}
                   className="w-full glass-input rounded-xl py-3 pl-12 pr-4 appearance-none cursor-pointer"
                 >
                   <option value="" disabled>Selecione uma categoria</option>
@@ -283,6 +292,31 @@ export function TransactionForm({ initialData, onClose }: TransactionFormProps) 
           )}
           {errors.category && <p className="text-xs text-destructive">{errors.category}</p>}
         </div>
+
+        {isContasCategory && (
+          <div className="space-y-1">
+            <label className="text-sm font-medium text-muted-foreground">Enviar para Contas do Mês?</label>
+            <div className="flex items-center gap-2">
+              {(["fixed", "variable"] as const).map((t) => (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => setBillType(billType === t ? null : t)}
+                  className={`flex-1 px-4 py-2.5 rounded-xl text-sm font-medium transition-colors ${
+                    billType === t
+                      ? "bg-primary/20 text-primary border border-primary/30"
+                      : "bg-white/5 text-muted-foreground border border-white/10 hover:text-white"
+                  }`}
+                >
+                  {t === "fixed" ? "Conta Fixa" : "Conta Variável"}
+                </button>
+              ))}
+            </div>
+            {billType && (
+              <p className="text-xs text-primary mt-1">Esta transação será adicionada como conta {billType === "fixed" ? "fixa" : "variável"} na aba Contas do Mês.</p>
+            )}
+          </div>
+        )}
 
         <button
           type="submit"

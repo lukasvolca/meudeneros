@@ -93,7 +93,8 @@ export function TransactionForm({ initialData, onClose }: TransactionFormProps) 
     }
 
     if (billType && isContasCategory) {
-      addBill({ name: title.trim(), amount: parseAmount(amount), type: billType });
+      const txDate = new Date(date + "T12:00:00").toISOString();
+      addBill({ name: title.trim(), amount: parseAmount(amount), type: billType, paid: true, paidAt: txDate });
     }
 
     if (onClose) onClose();

@@ -14,7 +14,7 @@ interface FinanceContextType {
   addCategory: (name: string, icon?: string, type?: "income" | "expense") => string;
   updateCategory: (id: string, updates: { name?: string; icon?: string }) => void;
   deleteCategory: (id: string) => void;
-  addBill: (bill: Omit<Bill, "id" | "createdAt" | "paid" | "paidAt">) => void;
+  addBill: (bill: Omit<Bill, "id" | "createdAt"> & { paid?: boolean; paidAt?: string | null }) => void;
   updateBill: (id: string, updates: Partial<Bill>) => void;
   deleteBill: (id: string) => void;
   toggleBillPaid: (id: string) => void;
@@ -122,12 +122,14 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
     setCategories((prev) => prev.filter((c) => c.id !== id));
   };
 
-  const addBill = (billData: Omit<Bill, "id" | "createdAt" | "paid" | "paidAt">) => {
+  const addBill = (billData: Omit<Bill, "id" | "createdAt"> & { paid?: boolean; paidAt?: string | null }) => {
     const newBill: Bill = {
-      ...billData,
       id: generateId(),
-      paid: false,
-      paidAt: null,
+      name: billData.name,
+      amount: billData.amount,
+      type: billData.type,
+      paid: billData.paid ?? false,
+      paidAt: billData.paidAt ?? null,
       createdAt: new Date().toISOString(),
     };
     setBills((prev) => [...prev, newBill]);

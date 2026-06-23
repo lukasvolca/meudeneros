@@ -113,29 +113,44 @@ export default function Dashboard() {
               <div className="space-y-3">
                 {Object.entries(categoryStats)
                   .sort(([, a], [, b]) => b.expense - a.expense)
-                  .map(([catId, stats]) => {
+                  .flatMap(([catId, stats]) => {
                     const category = categories.find(c => c.id === catId);
-                    const net = stats.income - stats.expense;
-                    const hasOnlyIncome = stats.expense === 0;
-                    const hasOnlyExpense = stats.income === 0;
-                    const displayValue = hasOnlyIncome
-                      ? `+${formatCurrency(stats.income)}`
-                      : hasOnlyExpense
-                      ? `-${formatCurrency(stats.expense)}`
-                      : `${net >= 0 ? "+" : "-"}${formatCurrency(Math.abs(net))}`;
-                    const colorClass = hasOnlyIncome || net > 0 ? "text-success" : "text-destructive";
-                    return (
-                      <div key={catId} className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <CategoryIcon category={category} size="sm" />
-                          <div>
-                            <p className="font-semibold text-sm">{category?.name || "Sem categoria"}</p>
-                            <p className="text-xs text-muted-foreground">{stats.count} transaç{stats.count === 1 ? "ão" : "ões"}</p>
+                    const catName = category?.name || "Sem categoria";
+                    const items: React.ReactNode[] = [];
+
+                    if (stats.expense > 0) {
+                      const label = stats.income > 0 ? `${catName} (saídas)` : catName;
+                      items.push(
+                        <div key={`${catId}-expense`} className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <CategoryIcon category={category} size="sm" />
+                            <div>
+                              <p className="font-semibold text-sm">{label}</p>
+                              <p className="text-xs text-muted-foreground">{stats.transactions.filter(t => t.type === "expense").length} transaç{stats.transactions.filter(t => t.type === "expense").length === 1 ? "ão" : "ões"}</p>
+                            </div>
                           </div>
+                          <span className="font-bold text-sm text-destructive">-{formatCurrency(stats.expense)}</span>
                         </div>
-                        <span className={`font-bold text-sm ${colorClass}`}>{displayValue}</span>
-                      </div>
-                    );
+                      );
+                    }
+
+                    if (stats.income > 0) {
+                      const label = stats.expense > 0 ? `${catName} (entradas)` : catName;
+                      items.push(
+                        <div key={`${catId}-income`} className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <CategoryIcon category={category} size="sm" />
+                            <div>
+                              <p className="font-semibold text-sm">{label}</p>
+                              <p className="text-xs text-muted-foreground">{stats.transactions.filter(t => t.type === "income").length} transaç{stats.transactions.filter(t => t.type === "income").length === 1 ? "ão" : "ões"}</p>
+                            </div>
+                          </div>
+                          <span className="font-bold text-sm text-success">+{formatCurrency(stats.income)}</span>
+                        </div>
+                      );
+                    }
+
+                    return items;
                   })}
               </div>
             )}

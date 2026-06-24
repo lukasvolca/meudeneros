@@ -11,6 +11,7 @@ import { CategoryIconPicker } from "@/components/CategoryIconPicker";
 export default function Categories() {
   const { transactions, categories, deleteCategory, updateCategory, currentDate } = useFinance();
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [catTypeFilter, setCatTypeFilter] = useState<"all" | "expense" | "income">("all");
   const [typeFilter, setTypeFilter] = useState<"all" | "expense" | "income">("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [editingCatId, setEditingCatId] = useState<string | null>(null);
@@ -96,6 +97,23 @@ export default function Categories() {
             <span className="text-xs text-muted-foreground">{categories.length} categoria{categories.length !== 1 ? 's' : ''}</span>
           </div>
 
+          {/* Category type filter */}
+          <div className="flex items-center gap-2">
+            {(["all", "expense", "income"] as const).map(f => (
+              <button
+                key={f}
+                onClick={() => { setCatTypeFilter(f); setSelectedCategory("all"); }}
+                className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                  catTypeFilter === f
+                    ? f === "all" ? "bg-white/15 text-white" : f === "expense" ? "bg-destructive/20 text-destructive" : "bg-success/20 text-success"
+                    : "text-muted-foreground hover:text-white"
+                }`}
+              >
+                {f === "all" ? "Todas" : f === "expense" ? "Saídas" : "Entradas"}
+              </button>
+            ))}
+          </div>
+
           {/* Dropdown selector */}
           <select
             value={selectedCategory}
@@ -104,7 +122,9 @@ export default function Categories() {
             style={{ colorScheme: 'dark' }}
           >
             <option value="all">Todas as categorias</option>
-            {categories.map(c => (
+            {categories
+              .filter(c => catTypeFilter === "all" || c.type === catTypeFilter || (!c.type && catTypeFilter === "expense"))
+              .map(c => (
               <option key={c.id} value={c.id}>{c.name}</option>
             ))}
           </select>
@@ -123,7 +143,9 @@ export default function Categories() {
               Todas
             </button>
 
-            {categories.map((cat) => (
+            {categories
+              .filter(c => catTypeFilter === "all" || c.type === catTypeFilter || (!c.type && catTypeFilter === "expense"))
+              .map((cat) => (
               <div key={cat.id}>
                 {editingCatId === cat.id ? (
                   /* Editing chip */

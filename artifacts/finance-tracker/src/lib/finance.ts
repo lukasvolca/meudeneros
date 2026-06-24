@@ -17,6 +17,7 @@ export interface Category {
   id: string;
   name: string;
   icon?: string; // lucide icon name (e.g. "ShoppingCart") or base64 data URL
+  limit?: number;
   createdAt: string;
 }
 

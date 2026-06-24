@@ -16,6 +16,7 @@ export default function Categories() {
   const [editingCatId, setEditingCatId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState("");
   const [editingIcon, setEditingIcon] = useState("");
+  const [editingLimit, setEditingLimit] = useState("");
   const [showIconPicker, setShowIconPicker] = useState(false);
 
   const monthTransactions = filterTransactionsByMonth(transactions, currentDate.getMonth(), currentDate.getFullYear());
@@ -34,22 +35,37 @@ export default function Categories() {
   const totalIncome = sortedFiltered.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
   const totalExpense = sortedFiltered.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
 
-  const handleStartEdit = (id: string, name: string, icon?: string) => {
+  const categoryExpenses = Object.fromEntries(
+    Object.entries(
+      monthTransactions
+        .filter(t => t.type === "expense")
+        .reduce((acc, t) => {
+          acc[t.categoryId] = (acc[t.categoryId] || 0) + t.amount;
+          return acc;
+        }, {} as Record<string, number>)
+    )
+  );
+
+  const handleStartEdit = (id: string, name: string, icon?: string, limit?: number) => {
     setEditingCatId(id);
     setEditingName(name);
     setEditingIcon(icon || "");
+    setEditingLimit(limit ? String(limit) : "");
     setShowIconPicker(false);
   };
 
   const handleSaveEdit = () => {
     if (editingCatId && editingName.trim()) {
+      const parsedLimit = parseFloat(editingLimit);
       updateCategory(editingCatId, {
         name: editingName.trim(),
         icon: editingIcon || undefined,
+        limit: parsedLimit > 0 ? parsedLimit : undefined,
       });
       setEditingCatId(null);
       setEditingName("");
       setEditingIcon("");
+      setEditingLimit("");
       setShowIconPicker(false);
     }
   };
@@ -58,6 +74,7 @@ export default function Categories() {
     setEditingCatId(null);
     setEditingName("");
     setEditingIcon("");
+    setEditingLimit("");
     setShowIconPicker(false);
   };
 
@@ -129,7 +146,18 @@ export default function Categories() {
                         onChange={e => setEditingName(e.target.value)}
                         onKeyDown={e => { if (e.key === 'Enter') handleSaveEdit(); if (e.key === 'Escape') handleCancelEdit(); }}
                         className="bg-transparent outline-none text-sm font-semibold text-white w-28"
+                        placeholder="Nome"
                       />
+                      <div className="relative">
+                        <span className="absolute left-0 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">R$</span>
+                        <input
+                          value={editingLimit}
+                          onChange={e => setEditingLimit(e.target.value.replace(/[^0-9.,]/g, ""))}
+                          onKeyDown={e => { if (e.key === 'Enter') handleSaveEdit(); if (e.key === 'Escape') handleCancelEdit(); }}
+                          className="bg-transparent outline-none text-xs text-muted-foreground w-24 pl-6"
+                          placeholder="Limite mensal"
+                        />
+                      </div>
                       <div className="flex items-center gap-1">
                         <button
                           onClick={() => setShowIconPicker(v => !v)}
@@ -164,21 +192,42 @@ export default function Categories() {
                       <CategoryIcon category={cat} size="xl" />
                     </button>
 
-                    {/* Name */}
+                    {/* Name + limit bar */}
                     <button
                       onClick={() => setSelectedCategory(cat.id)}
                       className={cn(
-                        "flex-1 pr-2 font-semibold text-sm whitespace-nowrap",
+                        "flex-1 pr-2 text-left",
                         selectedCategory === cat.id ? "text-primary" : "text-muted-foreground group-hover:text-white"
                       )}
                     >
-                      {cat.name}
+                      <span className="font-semibold text-sm whitespace-nowrap">{cat.name}</span>
+                      {cat.limit && cat.limit > 0 && (() => {
+                        const spent = categoryExpenses[cat.id] || 0;
+                        const pct = Math.min((spent / cat.limit) * 100, 100);
+                        const over = spent > cat.limit;
+                        return (
+                          <div className="mt-1">
+                            <div className="flex items-center justify-between text-[10px] mb-0.5">
+                              <span className={over ? "text-destructive font-semibold" : "text-muted-foreground"}>
+                                {formatCurrency(spent)}
+                              </span>
+                              <span className="text-muted-foreground">/ {formatCurrency(cat.limit)}</span>
+                            </div>
+                            <div className="h-1.5 rounded-full bg-white/10 overflow-hidden">
+                              <div
+                                className={cn("h-full rounded-full transition-all", over ? "bg-destructive" : pct > 80 ? "bg-yellow-500" : "bg-primary")}
+                                style={{ width: `${pct}%` }}
+                              />
+                            </div>
+                          </div>
+                        );
+                      })()}
                     </button>
 
                     {/* Edit / Delete — appear on hover */}
                     <div className="flex flex-col gap-0.5 pr-2 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button
-                        onClick={() => handleStartEdit(cat.id, cat.name, cat.icon)}
+                        onClick={() => handleStartEdit(cat.id, cat.name, cat.icon, cat.limit)}
                         className="p-1 rounded-lg hover:bg-white/10 text-muted-foreground hover:text-white transition-colors"
                         title="Editar"
                       >

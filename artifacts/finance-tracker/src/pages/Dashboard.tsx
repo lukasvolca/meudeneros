@@ -9,7 +9,7 @@ import {
   getTotalIncome,
   getTransactionsByCategory,
 } from "@/lib/finance";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, cn } from "@/lib/utils";
 import { Wallet, TrendingUp, TrendingDown, CalendarDays, ArrowRight } from "lucide-react";
 import { Link } from "wouter";
 import { CategoryIcon } from "@/components/CategoryIcon";
@@ -120,16 +120,36 @@ export default function Dashboard() {
 
                     if (stats.expense > 0) {
                       const label = stats.income > 0 ? `${catName} (saídas)` : catName;
+                      const limit = category?.limit;
+                      const pct = limit && limit > 0 ? Math.min((stats.expense / limit) * 100, 100) : null;
+                      const over = limit && limit > 0 && stats.expense > limit;
                       items.push(
-                        <div key={`${catId}-expense`} className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <CategoryIcon category={category} size="sm" />
-                            <div>
-                              <p className="font-semibold text-sm">{label}</p>
-                              <p className="text-xs text-muted-foreground">{stats.transactions.filter(t => t.type === "expense").length} transaç{stats.transactions.filter(t => t.type === "expense").length === 1 ? "ão" : "ões"}</p>
+                        <div key={`${catId}-expense`} className="space-y-1">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <CategoryIcon category={category} size="sm" />
+                              <div>
+                                <p className="font-semibold text-sm">{label}</p>
+                                <p className="text-xs text-muted-foreground">{stats.transactions.filter(t => t.type === "expense").length} transaç{stats.transactions.filter(t => t.type === "expense").length === 1 ? "ão" : "ões"}</p>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <span className="font-bold text-sm text-destructive">-{formatCurrency(stats.expense)}</span>
+                              {limit && limit > 0 && (
+                                <p className={cn("text-[10px]", over ? "text-destructive font-semibold" : "text-muted-foreground")}>
+                                  / {formatCurrency(limit)}
+                                </p>
+                              )}
                             </div>
                           </div>
-                          <span className="font-bold text-sm text-destructive">-{formatCurrency(stats.expense)}</span>
+                          {pct !== null && (
+                            <div className="h-1.5 rounded-full bg-white/10 overflow-hidden ml-9">
+                              <div
+                                className={cn("h-full rounded-full transition-all", over ? "bg-destructive" : pct > 80 ? "bg-yellow-500" : "bg-primary")}
+                                style={{ width: `${pct}%` }}
+                              />
+                            </div>
+                          )}
                         </div>
                       );
                     }

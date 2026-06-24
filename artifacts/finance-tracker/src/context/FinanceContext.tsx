@@ -12,7 +12,7 @@ interface FinanceContextType {
   updateTransaction: (id: string, tx: Partial<Omit<Transaction, "id" | "createdAt">>) => void;
   deleteTransaction: (id: string) => void;
   addCategory: (name: string, icon?: string, type?: "income" | "expense") => string;
-  updateCategory: (id: string, updates: { name?: string; icon?: string }) => void;
+  updateCategory: (id: string, updates: { name?: string; icon?: string; limit?: number }) => void;
   deleteCategory: (id: string) => void;
   addBill: (bill: Omit<Bill, "id" | "createdAt"> & { paid?: boolean; paidAt?: string | null }) => void;
   updateBill: (id: string, updates: Partial<Bill>) => void;
@@ -109,7 +109,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
     return id;
   };
 
-  const updateCategory = (id: string, updates: { name?: string; icon?: string }) => {
+  const updateCategory = (id: string, updates: { name?: string; icon?: string; limit?: number }) => {
     setCategories((prev) => prev.map(c => c.id === id ? { ...c, ...updates } : c));
     if (updates.name) {
       setTransactions((prev) =>

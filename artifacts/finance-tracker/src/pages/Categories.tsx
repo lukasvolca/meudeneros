@@ -115,7 +115,7 @@ export default function Categories() {
           </div>
 
           {/* Mobile: pill chips (original) */}
-          <div className="sm:hidden flex flex-wrap gap-2">
+          <div className="md:hidden flex flex-wrap gap-2">
             <button
               onClick={() => setSelectedCategory("all")}
               className={cn(
@@ -151,19 +151,19 @@ export default function Categories() {
             {categories.length === 0 && <p className="text-sm text-muted-foreground py-2">Nenhuma categoria criada.</p>}
           </div>
 
-          {/* Desktop: grid of small square blocks, 6 per row */}
-          <div className="hidden sm:flex sm:flex-wrap gap-2">
+          {/* Desktop: grid forcing max 6 blocks per row */}
+          <div className="hidden md:grid grid-cols-6 gap-2">
             <button
               onClick={() => setSelectedCategory("all")}
               className={cn(
-                "flex flex-col items-center justify-center gap-1 rounded-2xl border transition-colors w-20 h-20",
+                "flex flex-col items-center justify-center gap-1 rounded-2xl border transition-colors h-24",
                 selectedCategory === "all"
                   ? "bg-primary/15 border-primary/30 text-primary"
                   : "bg-white/5 border-white/5 text-muted-foreground hover:bg-white/10 hover:text-white"
               )}
             >
               <span className="text-base font-bold leading-none">·</span>
-              <span className="text-[11px] font-medium">Todas</span>
+              <span className="text-xs font-medium">Todas</span>
             </button>
 
             {categories
@@ -179,7 +179,7 @@ export default function Categories() {
                   <div
                     key={cat.id}
                     className={cn(
-                      "group relative flex flex-col items-center justify-between p-2 rounded-2xl border transition-colors w-20 h-20 cursor-pointer",
+                      "group relative flex flex-col items-center justify-between p-2 rounded-2xl border transition-colors h-24 cursor-pointer",
                       isEditing
                         ? "bg-white/10 border-primary/30 ring-1 ring-primary/30"
                         : isSelected
@@ -191,7 +191,7 @@ export default function Categories() {
                     <div className="flex-1 flex items-center justify-center">
                       <CategoryIcon category={cat} size="xl" />
                     </div>
-                    <span className={cn("text-[10px] font-semibold truncate w-full text-center leading-tight", isSelected ? "text-primary" : "text-muted-foreground group-hover:text-white")}>
+                    <span className={cn("text-[11px] font-semibold truncate w-full text-center leading-tight", isSelected ? "text-primary" : "text-muted-foreground group-hover:text-white")}>
                       {cat.name}
                     </span>
                     {pct !== null && (
@@ -207,7 +207,7 @@ export default function Categories() {
                 );
               })}
 
-            {categories.length === 0 && <p className="text-sm text-muted-foreground py-2">Nenhuma categoria criada.</p>}
+            {categories.length === 0 && <p className="col-span-6 text-sm text-muted-foreground py-2">Nenhuma categoria criada.</p>}
           </div>
 
           {/* Edit panel — shown below grid when editing */}

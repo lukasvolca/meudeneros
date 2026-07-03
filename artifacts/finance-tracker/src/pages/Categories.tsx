@@ -126,7 +126,7 @@ export default function Categories() {
               )}
             >
               <span className="text-lg font-bold leading-none">·</span>
-              <span className="text-xs font-medium">Todas</span>
+              <span className="text-[10px] font-medium">Todas</span>
             </button>
 
             {categories
@@ -142,7 +142,7 @@ export default function Categories() {
                   <div
                     key={cat.id}
                     className={cn(
-                      "cat-square glass-panel group relative flex flex-col items-center justify-center gap-1.5 p-3 rounded-2xl transition-all cursor-pointer",
+                      "cat-square glass-panel group relative flex flex-col items-center justify-center gap-1 p-1.5 rounded-2xl transition-all cursor-pointer",
                       isEditing
                         ? "ring-2 ring-primary/50"
                         : isSelected
@@ -152,7 +152,7 @@ export default function Categories() {
                     onClick={() => !isEditing && setSelectedCategory(cat.id)}
                   >
                     <CategoryIcon category={cat} size="xl" />
-                    <span className={cn("text-xs font-semibold truncate w-full text-center leading-tight", isSelected ? "text-primary" : "text-muted-foreground group-hover:text-white")}>
+                    <span className={cn("text-[10px] font-semibold truncate w-full text-center leading-tight", isSelected ? "text-primary" : "text-muted-foreground group-hover:text-white")}>
                       {cat.name}
                     </span>
                     {pct !== null && (

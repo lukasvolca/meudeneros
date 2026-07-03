@@ -110,10 +110,13 @@
 }
 @media (min-width: 768px) {
   .cat-grid {
-    grid-template-columns: repeat(6, minmax(0, 1fr));
+    /* blocos fixos de 80px, máx. 6 por linha */
+    grid-template-columns: repeat(6, 80px);
+    justify-content: start;
   }
 }
 .cat-square {
   aspect-ratio: 1 / 1;
   min-width: 0;
+  overflow: hidden;
 }

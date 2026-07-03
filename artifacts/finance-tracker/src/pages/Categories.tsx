@@ -115,11 +115,11 @@ export default function Categories() {
           </div>
 
           {/* Category grid — 3 per row on mobile, 6 on desktop */}
-          <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
+          <div className="cat-grid">
             <button
               onClick={() => setSelectedCategory("all")}
               className={cn(
-                "glass-panel flex flex-col items-center justify-center gap-1 rounded-2xl transition-all aspect-square",
+                "cat-square glass-panel flex flex-col items-center justify-center gap-1 rounded-2xl transition-all",
                 selectedCategory === "all"
                   ? "ring-2 ring-primary/50 text-primary"
                   : "text-muted-foreground hover:text-white"
@@ -142,7 +142,7 @@ export default function Categories() {
                   <div
                     key={cat.id}
                     className={cn(
-                      "glass-panel group relative flex flex-col items-center justify-center gap-1.5 p-3 rounded-2xl transition-all aspect-square cursor-pointer",
+                      "cat-square glass-panel group relative flex flex-col items-center justify-center gap-1.5 p-3 rounded-2xl transition-all cursor-pointer",
                       isEditing
                         ? "ring-2 ring-primary/50"
                         : isSelected
@@ -168,7 +168,7 @@ export default function Categories() {
                 );
               })}
 
-            {categories.length === 0 && <p className="col-span-3 md:col-span-6 text-sm text-muted-foreground py-2">Nenhuma categoria criada.</p>}
+            {categories.length === 0 && <p style={{ gridColumn: "1 / -1" }} className="text-sm text-muted-foreground py-2">Nenhuma categoria criada.</p>}
           </div>
 
           {/* Edit panel — shown below grid when editing */}

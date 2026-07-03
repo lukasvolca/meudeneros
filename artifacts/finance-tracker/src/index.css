@@ -101,3 +101,19 @@
 .glass-input {
   @apply bg-black/30 border border-white/10 focus:border-primary/60 focus:bg-black/40 transition-all duration-300 outline-none;
 }
+
+/* Category grid — robust CSS (não depende do Tailwind grid utilities) */
+.cat-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+@media (min-width: 768px) {
+  .cat-grid {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+}
+.cat-square {
+  aspect-ratio: 1 / 1;
+  min-width: 0;
+}

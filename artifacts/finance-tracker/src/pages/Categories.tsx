@@ -119,13 +119,13 @@ export default function Categories() {
             <button
               onClick={() => setSelectedCategory("all")}
               className={cn(
-                "flex flex-col items-center justify-center gap-1 rounded-2xl border transition-colors h-24",
+                "glass-panel flex flex-col items-center justify-center gap-1 rounded-2xl transition-all aspect-square",
                 selectedCategory === "all"
-                  ? "bg-primary/15 border-primary/30 text-primary"
-                  : "bg-white/5 border-white/5 text-muted-foreground hover:bg-white/10 hover:text-white"
+                  ? "ring-2 ring-primary/50 text-primary"
+                  : "text-muted-foreground hover:text-white"
               )}
             >
-              <span className="text-base font-bold leading-none">·</span>
+              <span className="text-lg font-bold leading-none">·</span>
               <span className="text-xs font-medium">Todas</span>
             </button>
 
@@ -142,23 +142,21 @@ export default function Categories() {
                   <div
                     key={cat.id}
                     className={cn(
-                      "group relative flex flex-col items-center justify-between p-2 rounded-2xl border transition-colors h-24 cursor-pointer",
+                      "glass-panel group relative flex flex-col items-center justify-center gap-1.5 p-3 rounded-2xl transition-all aspect-square cursor-pointer",
                       isEditing
-                        ? "bg-white/10 border-primary/30 ring-1 ring-primary/30"
+                        ? "ring-2 ring-primary/50"
                         : isSelected
-                        ? "bg-primary/10 border-primary/30"
-                        : "bg-white/5 border-white/5 hover:bg-white/8 hover:border-white/15"
+                        ? "ring-2 ring-primary/50"
+                        : "hover:ring-1 hover:ring-white/15"
                     )}
                     onClick={() => !isEditing && setSelectedCategory(cat.id)}
                   >
-                    <div className="flex-1 flex items-center justify-center">
-                      <CategoryIcon category={cat} size="xl" />
-                    </div>
-                    <span className={cn("text-[11px] font-semibold truncate w-full text-center leading-tight", isSelected ? "text-primary" : "text-muted-foreground group-hover:text-white")}>
+                    <CategoryIcon category={cat} size="xl" />
+                    <span className={cn("text-xs font-semibold truncate w-full text-center leading-tight", isSelected ? "text-primary" : "text-muted-foreground group-hover:text-white")}>
                       {cat.name}
                     </span>
                     {pct !== null && (
-                      <div className="w-full h-1 rounded-full bg-white/10 overflow-hidden mt-1">
+                      <div className="w-full h-1 rounded-full bg-white/10 overflow-hidden">
                         <div className={cn("h-full rounded-full", over ? "bg-destructive" : pct > 80 ? "bg-yellow-500" : "bg-primary")} style={{ width: `${pct}%` }} />
                       </div>
                     )}

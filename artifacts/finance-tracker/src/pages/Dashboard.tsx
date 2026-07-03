@@ -10,13 +10,15 @@ import {
   getTransactionsByCategory,
 } from "@/lib/finance";
 import { formatCurrency, cn } from "@/lib/utils";
-import { Wallet, TrendingUp, TrendingDown, CalendarDays, ArrowRight, Check, Clock } from "lucide-react";
+import { Wallet, TrendingUp, TrendingDown, CalendarDays, ArrowRight, Check, Clock, PiggyBank } from "lucide-react";
+import { useState } from "react";
 import { Link } from "wouter";
 import { CategoryIcon } from "@/components/CategoryIcon";
 import { subMonths } from "date-fns";
 
 export default function Dashboard() {
-  const { transactions, bills, currentDate, categories } = useFinance();
+  const { transactions, bills, currentDate, categories, initialBalance, setInitialBalance } = useFinance();
+  const [balanceInput, setBalanceInput] = useState(initialBalance > 0 ? String(initialBalance) : "");
 
   const prevDate = subMonths(currentDate, 1);
   const currentMonthTxs = filterTransactionsByMonth(transactions, currentDate.getMonth(), currentDate.getFullYear());
@@ -36,7 +38,7 @@ export default function Dashboard() {
   const prevMonthSaved = prevMonthNet < 0 ? 0 : prevMonthNet;
   const income = getTotalIncome(currentMonthTxs);
   const expenses = getTotalExpenses(currentMonthTxs);
-  const saldoDisponivel = prevMonthSaved + income - expenses - billsPaidAmount;
+  const saldoDisponivel = initialBalance + income - expenses - billsPaidAmount;
 
   const categoryStats = getTransactionsByCategory(currentMonthTxs);
 
@@ -61,12 +63,48 @@ export default function Dashboard() {
   return (
     <Layout title={greeting}>
       {!hasData ? (
-        <EmptyState
-          title="Bem-vindo ao Meu Deneros"
-          description="Sua jornada financeira começa aqui. Adicione sua primeira transação para visualizar o resumo do mês."
-          actionLabel="Adicionar Transação"
-          actionHref="/transactions"
-        />
+        <div className="flex flex-col items-center justify-center py-16 px-4">
+          <div className="glass-panel p-10 rounded-3xl max-w-md w-full flex flex-col items-center gap-6 text-center">
+            <PiggyBank className="w-16 h-16 text-primary" />
+            <div>
+              <h2 className="text-2xl font-display font-bold text-white">Bem-vindo ao Meu Deneros</h2>
+              <p className="text-muted-foreground text-sm mt-2">Para começar, informe o seu saldo atual. Você pode deixar em branco se quiser pular.</p>
+            </div>
+            <div className="w-full space-y-2">
+              <label className="text-xs text-muted-foreground font-medium text-left block">Saldo atual (R$)</label>
+              <input
+                type="number"
+                placeholder="0,00"
+                value={balanceInput}
+                onChange={(e) => setBalanceInput(e.target.value)}
+                step="0.01"
+                min="0"
+                className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white text-lg font-bold placeholder:text-muted-foreground focus:outline-none focus:border-primary/60 transition-colors text-center"
+              />
+            </div>
+            <div className="flex flex-col gap-3 w-full">
+              <Link
+                href="/transactions"
+                onClick={() => {
+                  const val = parseFloat(balanceInput);
+                  setInitialBalance(!isNaN(val) && val > 0 ? val : 0);
+                }}
+                className="w-full py-3 rounded-xl bg-primary text-primary-foreground font-semibold hover:bg-primary/90 transition-colors text-center"
+              >
+                Começar
+              </Link>
+              <button
+                onClick={() => {
+                  setInitialBalance(0);
+                  setBalanceInput("");
+                }}
+                className="text-sm text-muted-foreground hover:text-white transition-colors"
+              >
+                Pular por agora
+              </button>
+            </div>
+          </div>
+        </div>
       ) : (
         <div className="space-y-8">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">

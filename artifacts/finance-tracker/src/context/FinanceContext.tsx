@@ -6,6 +6,8 @@ interface FinanceContextType {
   transactions: Transaction[];
   categories: Category[];
   bills: Bill[];
+  initialBalance: number;
+  setInitialBalance: (amount: number) => void;
   currentDate: Date;
   setCurrentDate: (date: Date) => void;
   addTransaction: (tx: Omit<Transaction, "id" | "createdAt">) => void;
@@ -54,6 +56,18 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
       });
     } catch { return []; }
   });
+
+  const [initialBalance, setInitialBalanceState] = useState<number>(() => {
+    try {
+      const saved = localStorage.getItem("finance_initial_balance");
+      return saved ? parseFloat(saved) : 0;
+    } catch { return 0; }
+  });
+
+  const setInitialBalance = (amount: number) => {
+    setInitialBalanceState(amount);
+    localStorage.setItem("finance_initial_balance", String(amount));
+  };
 
   const [currentDate, setCurrentDate] = useState(new Date());
 
@@ -181,6 +195,8 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
         transactions,
         categories,
         bills,
+        initialBalance,
+        setInitialBalance,
         currentDate,
         setCurrentDate,
         addTransaction,

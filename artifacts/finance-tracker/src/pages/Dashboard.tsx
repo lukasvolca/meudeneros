@@ -22,6 +22,13 @@ export default function Dashboard() {
   const currentMonthTxs = filterTransactionsByMonth(transactions, currentDate.getMonth(), currentDate.getFullYear());
   const prevMonthTxs = filterTransactionsByMonth(transactions, prevDate.getMonth(), prevDate.getFullYear());
 
+  const monthKey = `${currentDate.getFullYear()}-${currentDate.getMonth()}`;
+  const billsPaid = bills.filter(b => b.paidByMonth[monthKey]?.paid);
+  const billsPending = bills.filter(b => !b.paidByMonth[monthKey]?.paid);
+  const billsTotalAmount = bills.reduce((s, b) => s + b.amount, 0);
+  const billsPaidAmount = billsPaid.reduce((s, b) => s + b.amount, 0);
+  const billsProgress = billsTotalAmount > 0 ? (billsPaidAmount / billsTotalAmount) * 100 : 0;
+
   const netOf = (txs: typeof transactions) =>
     txs.reduce((s, t) => s + (t.type === "income" ? t.amount : -t.amount), 0);
 
@@ -29,14 +36,7 @@ export default function Dashboard() {
   const prevMonthSaved = prevMonthNet < 0 ? 0 : prevMonthNet;
   const income = getTotalIncome(currentMonthTxs);
   const expenses = getTotalExpenses(currentMonthTxs);
-  const saldoDisponivel = prevMonthSaved + income - expenses;
-
-  const monthKey = `${currentDate.getFullYear()}-${currentDate.getMonth()}`;
-  const billsPaid = bills.filter(b => b.paidByMonth[monthKey]?.paid);
-  const billsPending = bills.filter(b => !b.paidByMonth[monthKey]?.paid);
-  const billsTotalAmount = bills.reduce((s, b) => s + b.amount, 0);
-  const billsPaidAmount = billsPaid.reduce((s, b) => s + b.amount, 0);
-  const billsProgress = billsTotalAmount > 0 ? (billsPaidAmount / billsTotalAmount) * 100 : 0;
+  const saldoDisponivel = prevMonthSaved + income - expenses - billsPaidAmount;
 
   const categoryStats = getTransactionsByCategory(currentMonthTxs);
 
@@ -56,7 +56,7 @@ export default function Dashboard() {
 
   const userName = (window as any)._userProfile?.name;
   const greeting = userName ? `Bem-vindo, ${userName}` : "Bem-vindo";
-  const hasData = transactions.length > 0;
+  const hasData = transactions.length > 0 || bills.length > 0;
 
   return (
     <Layout title={greeting}>
@@ -205,21 +205,27 @@ export default function Dashboard() {
                 </div>
               </div>
 
-              {billsPending.length === 0 ? (
-                <p className="text-success text-sm font-medium text-center py-1">Todas as contas pagas!</p>
-              ) : (
-                <div className="space-y-2">
-                  {billsPending.map(b => (
+              <div className="space-y-2">
+                {bills.map(b => {
+                  const paid = b.paidByMonth[monthKey]?.paid ?? false;
+                  return (
                     <div key={b.id} className="flex items-center justify-between py-1">
                       <div className="flex items-center gap-2">
-                        <Clock className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-                        <span className="text-sm text-white">{b.name}</span>
+                        {paid
+                          ? <Check className="w-3.5 h-3.5 text-success shrink-0" />
+                          : <Clock className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                        }
+                        <span className={`text-sm ${paid ? "line-through text-muted-foreground" : "text-white"}`}>
+                          {b.name}
+                        </span>
                       </div>
-                      <span className="text-sm font-bold text-destructive">{formatCurrency(b.amount)}</span>
+                      <span className={`text-sm font-bold ${paid ? "text-success" : "text-destructive"}`}>
+                        {formatCurrency(b.amount)}
+                      </span>
                     </div>
-                  ))}
-                </div>
-              )}
+                  );
+                })}
+              </div>
             </div>
           )}
 

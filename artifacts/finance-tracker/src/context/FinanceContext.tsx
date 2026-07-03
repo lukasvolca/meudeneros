@@ -41,7 +41,58 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
   const [bills, setBills] = useState<Bill[]>(() => {
     try {
       const saved = localStorage.getItem("finance_bills");
-      return saved ? JSON.parse(saved) : [];
+      const storedBills: Bill[] = saved ? JSON.parse(saved) : [];
+
+      const now = new Date();
+      const currentMonth = now.getMonth();
+      const currentYear = now.getFullYear();
+      const currentKey = `${currentYear}-${currentMonth}`;
+      const lastActiveKey = localStorage.getItem("finance_last_active_month");
+
+      const isNewMonth = lastActiveKey !== null && lastActiveKey !== currentKey;
+      let updatedBills = storedBills;
+      let didChange = false;
+
+      if (isNewMonth) {
+        // Reset any current-month bills that were pre-paid from a prior month
+        updatedBills = storedBills.map((b) =>
+          b.month === currentMonth && b.year === currentYear && b.paid
+            ? { ...b, paid: false, paidAt: null }
+            : b
+        );
+        didChange = updatedBills.some((b, i) => b !== storedBills[i]);
+      }
+
+      // Carry over from previous month if current month has no bills yet
+      const currentMonthBills = updatedBills.filter(
+        (b) => b.month === currentMonth && b.year === currentYear
+      );
+      if (currentMonthBills.length === 0) {
+        const prevMonth = currentMonth === 0 ? 11 : currentMonth - 1;
+        const prevYear = currentMonth === 0 ? currentYear - 1 : currentYear;
+        const prevBills = updatedBills.filter(
+          (b) => b.month === prevMonth && b.year === prevYear
+        );
+        if (prevBills.length > 0) {
+          const carried = prevBills.map((b) => ({
+            ...b,
+            id: generateId(),
+            paid: false,
+            paidAt: null,
+            month: currentMonth,
+            year: currentYear,
+            createdAt: now.toISOString(),
+          }));
+          updatedBills = [...updatedBills, ...carried];
+          didChange = true;
+        }
+      }
+
+      if (didChange) {
+        localStorage.setItem("finance_bills", JSON.stringify(updatedBills));
+      }
+      localStorage.setItem("finance_last_active_month", currentKey);
+      return updatedBills;
     } catch { return []; }
   });
 

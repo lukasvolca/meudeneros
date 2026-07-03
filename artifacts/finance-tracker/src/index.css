@@ -104,19 +104,23 @@
 
 /* Category grid — robust CSS (não depende do Tailwind grid utilities) */
 .cat-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.5rem;
-}
-@media (min-width: 768px) {
-  .cat-grid {
-    /* blocos fixos de 80px, máx. 6 por linha */
-    grid-template-columns: repeat(6, 80px);
-    justify-content: start;
-  }
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 0.5rem !important;
 }
 .cat-square {
   aspect-ratio: 1 / 1;
   min-width: 0;
   overflow: hidden;
+}
+@media (min-width: 768px) {
+  .cat-grid {
+    grid-template-columns: repeat(6, 160px) !important;
+    justify-content: start !important;
+  }
+  .cat-square {
+    width: 160px !important;
+    height: 160px !important;
+    aspect-ratio: unset !important;
+  }
 }

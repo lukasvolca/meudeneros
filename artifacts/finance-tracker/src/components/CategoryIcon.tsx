@@ -37,12 +37,16 @@ export function CategoryIcon({ category, size = "md", className }: CategoryIconP
     );
   }
 
+  const isIncome = category.type === "income";
+  const colorBg = isIncome ? "bg-primary/10" : "bg-destructive/10";
+  const colorText = isIncome ? "text-primary" : "text-destructive";
+
   if (icon) {
     const Icon = (Icons as any)[icon] as Icons.LucideIcon | undefined;
     if (Icon) {
       return (
-        <div className={cn(s.wrapper, "rounded-2xl bg-primary/10 flex items-center justify-center flex-shrink-0", className)}>
-          <Icon className={cn(s.icon, "text-primary")} />
+        <div className={cn(s.wrapper, "rounded-2xl flex items-center justify-center flex-shrink-0", colorBg, className)}>
+          <Icon className={cn(s.icon, colorText)} />
         </div>
       );
     }
@@ -50,7 +54,7 @@ export function CategoryIcon({ category, size = "md", className }: CategoryIconP
 
   // Fallback: first letter
   return (
-    <div className={cn(s.wrapper, "rounded-2xl bg-white/10 flex items-center justify-center flex-shrink-0 font-bold text-white/60", s.text, className)}>
+    <div className={cn(s.wrapper, "rounded-2xl flex items-center justify-center flex-shrink-0 font-bold", s.text, colorBg, colorText, className)}>
       {category.name.charAt(0).toUpperCase()}
     </div>
   );

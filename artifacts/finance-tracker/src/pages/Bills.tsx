@@ -17,19 +17,17 @@ export default function Bills() {
 
   const currentMonth = currentDate.getMonth();
   const currentYear = currentDate.getFullYear();
+  const monthKey = `${currentYear}-${currentMonth}`;
 
-  const monthBills = bills.filter(
-    (b) => b.month === currentMonth && b.year === currentYear ||
-    // compatibilidade: bills antigas sem month/year
-    (b.month === undefined && b.year === undefined)
-  );
+  const fixedBills = bills.filter((b) => b.type === "fixed");
+  const variableBills = bills.filter((b) => b.type === "variable");
 
-  const fixedBills = monthBills.filter((b) => b.type === "fixed");
-  const variableBills = monthBills.filter((b) => b.type === "variable");
+  const getPaid = (b: Bill) => b.paidByMonth[monthKey]?.paid ?? false;
+  const getPaidAt = (b: Bill) => b.paidByMonth[monthKey]?.paidAt ?? null;
 
   const totalFixed = fixedBills.reduce((s, b) => s + b.amount, 0);
   const totalVariable = variableBills.reduce((s, b) => s + b.amount, 0);
-  const totalPaid = monthBills.filter((b) => b.paid).reduce((s, b) => s + b.amount, 0);
+  const totalPaid = bills.filter(getPaid).reduce((s, b) => s + b.amount, 0);
   const totalPending = totalFixed + totalVariable - totalPaid;
 
   const resetForm = () => {
@@ -49,7 +47,7 @@ export default function Bills() {
     if (editingId) {
       updateBill(editingId, { name: formName.trim(), amount, type: formType });
     } else {
-      addBill({ name: formName.trim(), amount, type: formType, month: currentMonth, year: currentYear });
+      addBill({ name: formName.trim(), amount, type: formType });
     }
     resetForm();
   };
@@ -62,56 +60,61 @@ export default function Bills() {
     setShowForm(true);
   };
 
-  const renderBillRow = (bill: Bill) => (
-    <div
-      key={bill.id}
-      className={`flex items-center gap-3 p-4 rounded-2xl transition-colors ${
-        bill.paid ? "bg-success/5 border border-success/15" : "bg-white/5 border border-white/10"
-      }`}
-    >
-      <button
-        onClick={() => toggleBillPaid(bill.id)}
-        className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center shrink-0 transition-all ${
-          bill.paid
-            ? "bg-success border-success text-white"
-            : "border-white/30 hover:border-primary"
+  const renderBillRow = (bill: Bill) => {
+    const paid = getPaid(bill);
+    const paidAt = getPaidAt(bill);
+
+    return (
+      <div
+        key={bill.id}
+        className={`flex items-center gap-3 p-4 rounded-2xl transition-colors ${
+          paid ? "bg-success/5 border border-success/15" : "bg-white/5 border border-white/10"
         }`}
       >
-        {bill.paid && <Check className="w-4 h-4" />}
-      </button>
+        <button
+          onClick={() => toggleBillPaid(bill.id, monthKey)}
+          className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center shrink-0 transition-all ${
+            paid
+              ? "bg-success border-success text-white"
+              : "border-white/30 hover:border-primary"
+          }`}
+        >
+          {paid && <Check className="w-4 h-4" />}
+        </button>
 
-      <div className="flex-1 min-w-0">
-        <p className={`font-semibold text-sm truncate ${bill.paid ? "line-through text-muted-foreground" : "text-white"}`}>
-          {bill.name}
-        </p>
-        {bill.paid && bill.paidAt && (
-          <p className="text-xs text-success flex items-center gap-1 mt-0.5">
-            <CalendarCheck className="w-3 h-3" />
-            Pago em {format(parseISO(bill.paidAt), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+        <div className="flex-1 min-w-0">
+          <p className={`font-semibold text-sm truncate ${paid ? "line-through text-muted-foreground" : "text-white"}`}>
+            {bill.name}
           </p>
-        )}
-      </div>
+          {paid && paidAt && (
+            <p className="text-xs text-success flex items-center gap-1 mt-0.5">
+              <CalendarCheck className="w-3 h-3" />
+              Pago em {format(parseISO(paidAt), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+            </p>
+          )}
+        </div>
 
-      <span className={`font-bold text-sm shrink-0 ${bill.paid ? "text-success" : "text-destructive"}`}>
-        {formatCurrency(bill.amount)}
-      </span>
+        <span className={`font-bold text-sm shrink-0 ${paid ? "text-success" : "text-destructive"}`}>
+          {formatCurrency(bill.amount)}
+        </span>
 
-      <div className="flex items-center gap-1 shrink-0">
-        <button
-          onClick={() => startEdit(bill)}
-          className="p-1.5 rounded-lg text-primary hover:bg-primary/10 transition-colors"
-        >
-          <Edit2 className="w-4 h-4" />
-        </button>
-        <button
-          onClick={() => deleteBill(bill.id)}
-          className="p-1.5 rounded-lg text-destructive hover:bg-destructive/10 transition-colors"
-        >
-          <Trash2 className="w-4 h-4" />
-        </button>
+        <div className="flex items-center gap-1 shrink-0">
+          <button
+            onClick={() => startEdit(bill)}
+            className="p-1.5 rounded-lg text-primary hover:bg-primary/10 transition-colors"
+          >
+            <Edit2 className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => deleteBill(bill.id)}
+            className="p-1.5 rounded-lg text-destructive hover:bg-destructive/10 transition-colors"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   const renderSection = (title: string, items: Bill[], total: number) => (
     <div className="glass-panel p-6 rounded-3xl space-y-4">

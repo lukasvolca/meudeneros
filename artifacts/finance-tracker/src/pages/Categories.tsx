@@ -19,6 +19,7 @@ export default function Categories() {
   const [editingIcon, setEditingIcon] = useState("");
   const [editingLimit, setEditingLimit] = useState("");
   const [showIconPicker, setShowIconPicker] = useState(false);
+  const [deleteModal, setDeleteModal] = useState<{ id: string; name: string } | null>(null);
 
   const monthTransactions = filterTransactionsByMonth(transactions, currentDate.getMonth(), currentDate.getFullYear());
 
@@ -79,11 +80,25 @@ export default function Categories() {
     setShowIconPicker(false);
   };
 
-  const handleDelete = (id: string, name: string) => {
-    if (confirm(`Excluir a categoria "${name}"? As transações associadas não serão apagadas.`)) {
-      if (selectedCategory === id) setSelectedCategory("all");
-      deleteCategory(id);
-    }
+  const handleStartRename = (id: string, name: string, icon?: string, limit?: number) => {
+    handleStartEdit(id, name, icon, limit);
+    setShowIconPicker(false);
+  };
+
+  const handleStartIconEdit = (id: string, name: string, icon?: string, limit?: number) => {
+    handleStartEdit(id, name, icon, limit);
+    setShowIconPicker(true);
+  };
+
+  const handleDeleteRequest = (id: string, name: string) => {
+    setDeleteModal({ id, name });
+  };
+
+  const confirmDelete = () => {
+    if (!deleteModal) return;
+    if (selectedCategory === deleteModal.id) setSelectedCategory("all");
+    deleteCategory(deleteModal.id);
+    setDeleteModal(null);
   };
 
   return (
@@ -142,7 +157,7 @@ export default function Categories() {
                   <div
                     key={cat.id}
                     className={cn(
-                      "cat-square glass-panel group relative flex flex-col items-center justify-center gap-1 p-1.5 rounded-2xl transition-all cursor-pointer",
+                      "cat-square glass-panel flex flex-col items-center p-3 rounded-2xl transition-all cursor-pointer",
                       isEditing
                         ? "ring-2 ring-primary/50"
                         : isSelected
@@ -151,18 +166,39 @@ export default function Categories() {
                     )}
                     onClick={() => !isEditing && setSelectedCategory(cat.id)}
                   >
-                    <CategoryIcon category={cat} size="xl" />
-                    <span className={cn("text-[10px] font-semibold truncate w-full text-center leading-tight", isSelected ? "text-primary" : "text-muted-foreground group-hover:text-white")}>
-                      {cat.name}
-                    </span>
-                    {pct !== null && (
-                      <div className="w-full h-1 rounded-full bg-white/10 overflow-hidden">
-                        <div className={cn("h-full rounded-full", over ? "bg-destructive" : pct > 80 ? "bg-yellow-500" : "bg-primary")} style={{ width: `${pct}%` }} />
-                      </div>
-                    )}
-                    <div className="absolute top-1 right-1 flex flex-col gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button onClick={(e) => { e.stopPropagation(); handleStartEdit(cat.id, cat.name, cat.icon, cat.limit); }} className="p-1 rounded-md bg-black/50 text-muted-foreground hover:text-white transition-colors" title="Editar"><Edit2 className="w-2.5 h-2.5" /></button>
-                      <button onClick={(e) => { e.stopPropagation(); handleDelete(cat.id, cat.name); }} className="p-1 rounded-md bg-black/50 text-muted-foreground hover:text-destructive transition-colors" title="Excluir"><Trash2 className="w-2.5 h-2.5" /></button>
+                    <div className="flex-1 flex flex-col items-center justify-center gap-1.5 w-full min-h-0">
+                      <CategoryIcon category={cat} size="xl" />
+                      <span className={cn("text-xs font-semibold truncate w-full text-center leading-tight", isSelected ? "text-primary" : "text-muted-foreground")}>
+                        {cat.name}
+                      </span>
+                      {pct !== null && (
+                        <div className="w-full h-1 rounded-full bg-white/10 overflow-hidden">
+                          <div className={cn("h-full rounded-full", over ? "bg-destructive" : pct > 80 ? "bg-yellow-500" : "bg-primary")} style={{ width: `${pct}%` }} />
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-1 w-full mt-2" onClick={e => e.stopPropagation()}>
+                      <button
+                        onClick={() => handleStartRename(cat.id, cat.name, cat.icon, cat.limit)}
+                        className="flex-1 py-1.5 rounded-lg bg-white/5 hover:bg-white/15 text-muted-foreground hover:text-white transition-colors flex items-center justify-center"
+                        title="Renomear"
+                      >
+                        <Edit2 className="w-3 h-3" />
+                      </button>
+                      <button
+                        onClick={() => handleStartIconEdit(cat.id, cat.name, cat.icon, cat.limit)}
+                        className="flex-1 py-1.5 rounded-lg bg-white/5 hover:bg-white/15 text-muted-foreground hover:text-white transition-colors flex items-center justify-center"
+                        title="Editar ícone"
+                      >
+                        <Image className="w-3 h-3" />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteRequest(cat.id, cat.name)}
+                        className="flex-1 py-1.5 rounded-lg bg-white/5 hover:bg-destructive/20 text-muted-foreground hover:text-destructive transition-colors flex items-center justify-center"
+                        title="Excluir"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </button>
                     </div>
                   </div>
                 );
@@ -299,6 +335,37 @@ export default function Categories() {
         </div>
 
       </div>
+      {deleteModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+          onClick={() => setDeleteModal(null)}
+        >
+          <div
+            className="glass-panel rounded-2xl p-6 max-w-sm w-full mx-4 space-y-4"
+            onClick={e => e.stopPropagation()}
+          >
+            <h3 className="text-base font-display font-bold">Excluir categoria</h3>
+            <p className="text-sm text-muted-foreground">
+              Tem certeza que deseja excluir <span className="text-white font-semibold">"{deleteModal.name}"</span>?
+              As transações associadas não serão apagadas.
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setDeleteModal(null)}
+                className="px-4 py-2 rounded-xl text-sm text-muted-foreground hover:text-white transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={confirmDelete}
+                className="px-4 py-2 rounded-xl bg-destructive/10 text-destructive hover:bg-destructive/20 text-sm font-semibold transition-colors flex items-center gap-2"
+              >
+                <Trash2 className="w-4 h-4" /> Excluir
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </Layout>
   );
 }

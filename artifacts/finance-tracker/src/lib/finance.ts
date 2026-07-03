@@ -17,6 +17,7 @@ export interface Category {
   id: string;
   name: string;
   icon?: string; // lucide icon name (e.g. "ShoppingCart") or base64 data URL
+  type?: "income" | "expense";
   limit?: number;
   createdAt: string;
 }
@@ -26,10 +27,7 @@ export interface Bill {
   name: string;
   amount: number;
   type: "fixed" | "variable";
-  paid: boolean;
-  paidAt: string | null;
-  month: number; // 0-11
-  year: number;
+  paidByMonth: Record<string, { paid: boolean; paidAt: string | null }>;
   createdAt: string;
 }
 

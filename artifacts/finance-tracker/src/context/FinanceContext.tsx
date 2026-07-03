@@ -14,10 +14,10 @@ interface FinanceContextType {
   addCategory: (name: string, icon?: string, type?: "income" | "expense") => string;
   updateCategory: (id: string, updates: { name?: string; icon?: string; limit?: number }) => void;
   deleteCategory: (id: string) => void;
-  addBill: (bill: Omit<Bill, "id" | "createdAt" | "month" | "year"> & { paid?: boolean; paidAt?: string | null; month?: number; year?: number }) => void;
-  updateBill: (id: string, updates: Partial<Bill>) => void;
+  addBill: (bill: { name: string; amount: number; type: "fixed" | "variable" }) => void;
+  updateBill: (id: string, updates: { name?: string; amount?: number; type?: "fixed" | "variable" }) => void;
   deleteBill: (id: string) => void;
-  toggleBillPaid: (id: string) => void;
+  toggleBillPaid: (id: string, monthKey: string) => void;
   clearAllData: () => void;
 }
 
@@ -41,58 +41,17 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
   const [bills, setBills] = useState<Bill[]>(() => {
     try {
       const saved = localStorage.getItem("finance_bills");
-      const storedBills: Bill[] = saved ? JSON.parse(saved) : [];
-
-      const now = new Date();
-      const currentMonth = now.getMonth();
-      const currentYear = now.getFullYear();
-      const currentKey = `${currentYear}-${currentMonth}`;
-      const lastActiveKey = localStorage.getItem("finance_last_active_month");
-
-      const isNewMonth = lastActiveKey !== null && lastActiveKey !== currentKey;
-      let updatedBills = storedBills;
-      let didChange = false;
-
-      if (isNewMonth) {
-        // Reset any current-month bills that were pre-paid from a prior month
-        updatedBills = storedBills.map((b) =>
-          b.month === currentMonth && b.year === currentYear && b.paid
-            ? { ...b, paid: false, paidAt: null }
-            : b
-        );
-        didChange = updatedBills.some((b, i) => b !== storedBills[i]);
-      }
-
-      // Carry over from previous month if current month has no bills yet
-      const currentMonthBills = updatedBills.filter(
-        (b) => b.month === currentMonth && b.year === currentYear
-      );
-      if (currentMonthBills.length === 0) {
-        const prevMonth = currentMonth === 0 ? 11 : currentMonth - 1;
-        const prevYear = currentMonth === 0 ? currentYear - 1 : currentYear;
-        const prevBills = updatedBills.filter(
-          (b) => b.month === prevMonth && b.year === prevYear
-        );
-        if (prevBills.length > 0) {
-          const carried = prevBills.map((b) => ({
-            ...b,
-            id: generateId(),
-            paid: false,
-            paidAt: null,
-            month: currentMonth,
-            year: currentYear,
-            createdAt: now.toISOString(),
-          }));
-          updatedBills = [...updatedBills, ...carried];
-          didChange = true;
+      if (!saved) return [];
+      const parsed = JSON.parse(saved);
+      // Migrate old format (bills with month/year/paid/paidAt) to new template format
+      return parsed.map((b: Bill & { month?: number; year?: number; paid?: boolean; paidAt?: string | null }) => {
+        if (b.paidByMonth !== undefined) return b;
+        const paidByMonth: Bill["paidByMonth"] = {};
+        if (b.paid && b.month !== undefined && b.year !== undefined) {
+          paidByMonth[`${b.year}-${b.month}`] = { paid: true, paidAt: b.paidAt ?? null };
         }
-      }
-
-      if (didChange) {
-        localStorage.setItem("finance_bills", JSON.stringify(updatedBills));
-      }
-      localStorage.setItem("finance_last_active_month", currentKey);
-      return updatedBills;
+        return { id: b.id, name: b.name, amount: b.amount, type: b.type, paidByMonth, createdAt: b.createdAt };
+      });
     } catch { return []; }
   });
 
@@ -173,23 +132,19 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
     setCategories((prev) => prev.filter((c) => c.id !== id));
   };
 
-  const addBill = (billData: Omit<Bill, "id" | "createdAt" | "month" | "year"> & { paid?: boolean; paidAt?: string | null; month?: number; year?: number }) => {
-    const now = new Date();
+  const addBill = (billData: { name: string; amount: number; type: "fixed" | "variable" }) => {
     const newBill: Bill = {
       id: generateId(),
       name: billData.name,
       amount: billData.amount,
       type: billData.type,
-      paid: billData.paid ?? false,
-      paidAt: billData.paidAt ?? null,
-      month: billData.month ?? currentDate.getMonth(),
-      year: billData.year ?? currentDate.getFullYear(),
-      createdAt: now.toISOString(),
+      paidByMonth: {},
+      createdAt: new Date().toISOString(),
     };
     setBills((prev) => [...prev, newBill]);
   };
 
-  const updateBill = (id: string, updates: Partial<Bill>) => {
+  const updateBill = (id: string, updates: { name?: string; amount?: number; type?: "fixed" | "variable" }) => {
     setBills((prev) => prev.map((b) => (b.id === id ? { ...b, ...updates } : b)));
   };
 
@@ -197,13 +152,20 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
     setBills((prev) => prev.filter((b) => b.id !== id));
   };
 
-  const toggleBillPaid = (id: string) => {
+  const toggleBillPaid = (id: string, monthKey: string) => {
     setBills((prev) =>
-      prev.map((b) =>
-        b.id === id
-          ? { ...b, paid: !b.paid, paidAt: !b.paid ? new Date().toISOString() : null }
-          : b
-      )
+      prev.map((b) => {
+        if (b.id !== id) return b;
+        const current = b.paidByMonth[monthKey];
+        const nowPaid = !current?.paid;
+        return {
+          ...b,
+          paidByMonth: {
+            ...b.paidByMonth,
+            [monthKey]: { paid: nowPaid, paidAt: nowPaid ? new Date().toISOString() : null },
+          },
+        };
+      })
     );
   };
 

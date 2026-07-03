@@ -10,13 +10,13 @@ import {
   getTransactionsByCategory,
 } from "@/lib/finance";
 import { formatCurrency, cn } from "@/lib/utils";
-import { Wallet, TrendingUp, TrendingDown, CalendarDays, ArrowRight } from "lucide-react";
+import { Wallet, TrendingUp, TrendingDown, CalendarDays, ArrowRight, Check, Clock } from "lucide-react";
 import { Link } from "wouter";
 import { CategoryIcon } from "@/components/CategoryIcon";
 import { subMonths } from "date-fns";
 
 export default function Dashboard() {
-  const { transactions, currentDate, categories } = useFinance();
+  const { transactions, bills, currentDate, categories } = useFinance();
 
   const prevDate = subMonths(currentDate, 1);
   const currentMonthTxs = filterTransactionsByMonth(transactions, currentDate.getMonth(), currentDate.getFullYear());
@@ -30,6 +30,13 @@ export default function Dashboard() {
   const income = getTotalIncome(currentMonthTxs);
   const expenses = getTotalExpenses(currentMonthTxs);
   const saldoDisponivel = prevMonthSaved + income - expenses;
+
+  const monthKey = `${currentDate.getFullYear()}-${currentDate.getMonth()}`;
+  const billsPaid = bills.filter(b => b.paidByMonth[monthKey]?.paid);
+  const billsPending = bills.filter(b => !b.paidByMonth[monthKey]?.paid);
+  const billsTotalAmount = bills.reduce((s, b) => s + b.amount, 0);
+  const billsPaidAmount = billsPaid.reduce((s, b) => s + b.amount, 0);
+  const billsProgress = billsTotalAmount > 0 ? (billsPaidAmount / billsTotalAmount) * 100 : 0;
 
   const categoryStats = getTransactionsByCategory(currentMonthTxs);
 
@@ -175,6 +182,46 @@ export default function Dashboard() {
               </div>
             )}
           </div>
+
+          {bills.length > 0 && (
+            <div className="glass-panel p-6 rounded-3xl space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-base font-display font-bold">Contas do Mês</h3>
+                <Link href="/bills" className="text-sm font-medium text-primary hover:text-white flex items-center gap-1 transition-colors">
+                  Ver Tudo <ArrowRight className="w-4 h-4" />
+                </Link>
+              </div>
+
+              <div className="space-y-1">
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span>{billsPaid.length} de {bills.length} pagas</span>
+                  <span>{formatCurrency(billsPaidAmount)} / {formatCurrency(billsTotalAmount)}</span>
+                </div>
+                <div className="h-2 rounded-full bg-white/10 overflow-hidden">
+                  <div
+                    className={cn("h-full rounded-full transition-all", billsProgress === 100 ? "bg-success" : "bg-primary")}
+                    style={{ width: `${billsProgress}%` }}
+                  />
+                </div>
+              </div>
+
+              {billsPending.length === 0 ? (
+                <p className="text-success text-sm font-medium text-center py-1">Todas as contas pagas!</p>
+              ) : (
+                <div className="space-y-2">
+                  {billsPending.map(b => (
+                    <div key={b.id} className="flex items-center justify-between py-1">
+                      <div className="flex items-center gap-2">
+                        <Clock className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                        <span className="text-sm text-white">{b.name}</span>
+                      </div>
+                      <span className="text-sm font-bold text-destructive">{formatCurrency(b.amount)}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
 
           <div className="space-y-5">
             <div className="flex items-center justify-between">

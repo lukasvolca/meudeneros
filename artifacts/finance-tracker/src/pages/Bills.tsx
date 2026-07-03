@@ -8,19 +8,28 @@ import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 export default function Bills() {
-  const { bills, addBill, updateBill, deleteBill, toggleBillPaid } = useFinance();
+  const { bills, addBill, updateBill, deleteBill, toggleBillPaid, currentDate } = useFinance();
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formName, setFormName] = useState("");
   const [formAmount, setFormAmount] = useState("");
   const [formType, setFormType] = useState<"fixed" | "variable">("fixed");
 
-  const fixedBills = bills.filter((b) => b.type === "fixed");
-  const variableBills = bills.filter((b) => b.type === "variable");
+  const currentMonth = currentDate.getMonth();
+  const currentYear = currentDate.getFullYear();
+
+  const monthBills = bills.filter(
+    (b) => b.month === currentMonth && b.year === currentYear ||
+    // compatibilidade: bills antigas sem month/year
+    (b.month === undefined && b.year === undefined)
+  );
+
+  const fixedBills = monthBills.filter((b) => b.type === "fixed");
+  const variableBills = monthBills.filter((b) => b.type === "variable");
 
   const totalFixed = fixedBills.reduce((s, b) => s + b.amount, 0);
   const totalVariable = variableBills.reduce((s, b) => s + b.amount, 0);
-  const totalPaid = bills.filter((b) => b.paid).reduce((s, b) => s + b.amount, 0);
+  const totalPaid = monthBills.filter((b) => b.paid).reduce((s, b) => s + b.amount, 0);
   const totalPending = totalFixed + totalVariable - totalPaid;
 
   const resetForm = () => {
@@ -40,7 +49,7 @@ export default function Bills() {
     if (editingId) {
       updateBill(editingId, { name: formName.trim(), amount, type: formType });
     } else {
-      addBill({ name: formName.trim(), amount, type: formType });
+      addBill({ name: formName.trim(), amount, type: formType, month: currentMonth, year: currentYear });
     }
     resetForm();
   };

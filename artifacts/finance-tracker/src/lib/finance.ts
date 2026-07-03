@@ -28,6 +28,8 @@ export interface Bill {
   type: "fixed" | "variable";
   paid: boolean;
   paidAt: string | null;
+  month: number; // 0-11
+  year: number;
   createdAt: string;
 }
 

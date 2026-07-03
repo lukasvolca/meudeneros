@@ -33,7 +33,7 @@ export default function Dashboard() {
 
   const categoryStats = getTransactionsByCategory(currentMonthTxs);
 
-  const recentTxs = [...transactions]
+  const recentTxs = [...currentMonthTxs]
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
     .slice(0, 5);
 

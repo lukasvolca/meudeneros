@@ -14,7 +14,7 @@ interface FinanceContextType {
   addCategory: (name: string, icon?: string, type?: "income" | "expense") => string;
   updateCategory: (id: string, updates: { name?: string; icon?: string; limit?: number }) => void;
   deleteCategory: (id: string) => void;
-  addBill: (bill: Omit<Bill, "id" | "createdAt"> & { paid?: boolean; paidAt?: string | null }) => void;
+  addBill: (bill: Omit<Bill, "id" | "createdAt" | "month" | "year"> & { paid?: boolean; paidAt?: string | null; month?: number; year?: number }) => void;
   updateBill: (id: string, updates: Partial<Bill>) => void;
   deleteBill: (id: string) => void;
   toggleBillPaid: (id: string) => void;
@@ -122,7 +122,8 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
     setCategories((prev) => prev.filter((c) => c.id !== id));
   };
 
-  const addBill = (billData: Omit<Bill, "id" | "createdAt"> & { paid?: boolean; paidAt?: string | null }) => {
+  const addBill = (billData: Omit<Bill, "id" | "createdAt" | "month" | "year"> & { paid?: boolean; paidAt?: string | null; month?: number; year?: number }) => {
+    const now = new Date();
     const newBill: Bill = {
       id: generateId(),
       name: billData.name,
@@ -130,7 +131,9 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
       type: billData.type,
       paid: billData.paid ?? false,
       paidAt: billData.paidAt ?? null,
-      createdAt: new Date().toISOString(),
+      month: billData.month ?? currentDate.getMonth(),
+      year: billData.year ?? currentDate.getFullYear(),
+      createdAt: now.toISOString(),
     };
     setBills((prev) => [...prev, newBill]);
   };

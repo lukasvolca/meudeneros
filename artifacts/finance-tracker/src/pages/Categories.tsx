@@ -114,45 +114,8 @@ export default function Categories() {
             ))}
           </div>
 
-          {/* Mobile: pill chips (original) */}
-          <div className="md:hidden flex flex-wrap gap-2">
-            <button
-              onClick={() => setSelectedCategory("all")}
-              className={cn(
-                "px-4 py-2 rounded-full font-medium text-sm whitespace-nowrap transition-colors",
-                selectedCategory === "all"
-                  ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20"
-                  : "bg-white/5 text-muted-foreground hover:bg-white/10 hover:text-white border border-white/5"
-              )}
-            >
-              Todas
-            </button>
-            {categories
-              .filter(c => catTypeFilter === "all" || c.type === catTypeFilter || (!c.type && catTypeFilter === "expense"))
-              .map((cat) => (
-                <div
-                  key={cat.id}
-                  className={cn(
-                    "group relative flex items-center gap-0 rounded-2xl transition-colors overflow-hidden border cursor-pointer",
-                    selectedCategory === cat.id ? "bg-primary/10 border-primary/30" : "bg-white/5 border-white/5 hover:bg-white/8 hover:border-white/10"
-                  )}
-                  onClick={() => setSelectedCategory(cat.id)}
-                >
-                  <div className="shrink-0 p-2"><CategoryIcon category={cat} size="xl" /></div>
-                  <span className={cn("pr-3 font-semibold text-sm whitespace-nowrap", selectedCategory === cat.id ? "text-primary" : "text-muted-foreground group-hover:text-white")}>
-                    {cat.name}
-                  </span>
-                  <div className="flex flex-col gap-0.5 pr-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button onClick={(e) => { e.stopPropagation(); handleStartEdit(cat.id, cat.name, cat.icon, cat.limit); }} className="p-1 rounded-lg hover:bg-white/10 text-muted-foreground hover:text-white transition-colors"><Edit2 className="w-3 h-3" /></button>
-                    <button onClick={(e) => { e.stopPropagation(); handleDelete(cat.id, cat.name); }} className="p-1 rounded-lg hover:bg-destructive/20 text-muted-foreground hover:text-destructive transition-colors"><Trash2 className="w-3 h-3" /></button>
-                  </div>
-                </div>
-              ))}
-            {categories.length === 0 && <p className="text-sm text-muted-foreground py-2">Nenhuma categoria criada.</p>}
-          </div>
-
-          {/* Desktop: grid forcing max 6 blocks per row */}
-          <div className="hidden md:grid grid-cols-6 gap-2">
+          {/* Category grid — 3 per row on mobile, 6 on desktop */}
+          <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
             <button
               onClick={() => setSelectedCategory("all")}
               className={cn(
@@ -207,7 +170,7 @@ export default function Categories() {
                 );
               })}
 
-            {categories.length === 0 && <p className="col-span-6 text-sm text-muted-foreground py-2">Nenhuma categoria criada.</p>}
+            {categories.length === 0 && <p className="col-span-3 md:col-span-6 text-sm text-muted-foreground py-2">Nenhuma categoria criada.</p>}
           </div>
 
           {/* Edit panel — shown below grid when editing */}

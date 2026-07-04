@@ -13,6 +13,9 @@ interface FinanceContextType {
   currentDate: Date;
   setCurrentDate: (date: Date) => void;
   loading: boolean;
+  pendingMigration: boolean;
+  migrateFromLocalStorage: () => Promise<void>;
+  dismissMigration: () => void;
   addTransaction: (tx: Omit<Transaction, "id" | "createdAt">) => void;
   updateTransaction: (id: string, tx: Partial<Omit<Transaction, "id" | "createdAt">>) => void;
   deleteTransaction: (id: string) => void;
@@ -37,6 +40,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
   const [initialBalance, setInitialBalanceState] = useState(0);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [loading, setLoading] = useState(true);
+  const [pendingMigration, setPendingMigration] = useState(false);
 
   const loadData = useCallback(async () => {
     if (!user) { setLoading(false); return; }
@@ -66,12 +70,79 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
       })));
 
       setInitialBalanceState(settingsRes.data?.initial_balance ?? 0);
+
+      // Detectar dados no localStorage para migração
+      const isEmpty = (txRes.data ?? []).length === 0 && (catRes.data ?? []).length === 0 && (billRes.data ?? []).length === 0;
+      if (isEmpty) {
+        const hasLocal =
+          !!localStorage.getItem("finance_transactions") ||
+          !!localStorage.getItem("finance_categories") ||
+          !!localStorage.getItem("finance_bills");
+        if (hasLocal) setPendingMigration(true);
+      }
     } finally {
       setLoading(false);
     }
   }, [user]);
 
   useEffect(() => { loadData(); }, [loadData]);
+
+  const migrateFromLocalStorage = async () => {
+    if (!user) return;
+    try {
+      const rawTx = localStorage.getItem("finance_transactions");
+      const rawCat = localStorage.getItem("finance_categories");
+      const rawBills = localStorage.getItem("finance_bills");
+      const rawBalance = localStorage.getItem("finance_initial_balance");
+
+      const localTx: Transaction[] = rawTx ? JSON.parse(rawTx) : [];
+      const localCat: Category[] = rawCat ? JSON.parse(rawCat) : [];
+      const localBillsRaw = rawBills ? JSON.parse(rawBills) : [];
+      const localBalance = rawBalance ? parseFloat(rawBalance) : 0;
+
+      // Normalizar bills para novo formato se necessário
+      const localBills: Bill[] = localBillsRaw.map((b: any) => {
+        if (b.paidByMonth !== undefined) return b as Bill;
+        const paidByMonth: Bill["paidByMonth"] = {};
+        if (b.paid && b.month !== undefined && b.year !== undefined) {
+          paidByMonth[`${b.year}-${b.month}`] = { paid: true, paidAt: b.paidAt ?? null };
+        }
+        return { id: b.id, name: b.name, amount: b.amount, type: b.type, paidByMonth, createdAt: b.createdAt };
+      });
+
+      if (localCat.length > 0) {
+        await supabase.from("categories").insert(
+          localCat.map((c) => ({ id: c.id, user_id: user.id, name: c.name, icon: c.icon ?? null, type: c.type ?? null, limit_amount: c.limit ?? null, created_at: c.createdAt }))
+        );
+      }
+      if (localTx.length > 0) {
+        await supabase.from("transactions").insert(
+          localTx.map((t) => ({ id: t.id, user_id: user.id, date: t.date, title: t.title, amount: t.amount, type: t.type, category_id: t.categoryId, category_name: t.categoryName, created_at: t.createdAt }))
+        );
+      }
+      if (localBills.length > 0) {
+        await supabase.from("bills").insert(
+          localBills.map((b) => ({ id: b.id, user_id: user.id, name: b.name, amount: b.amount, type: b.type, paid_by_month: b.paidByMonth, created_at: b.createdAt }))
+        );
+      }
+      if (localBalance > 0) {
+        await supabase.from("user_settings").upsert({ user_id: user.id, initial_balance: localBalance, updated_at: new Date().toISOString() });
+      }
+
+      // Limpar localStorage
+      ["finance_transactions", "finance_categories", "finance_bills", "finance_initial_balance", "finance_last_active_month"].forEach((k) => localStorage.removeItem(k));
+
+      setPendingMigration(false);
+      await loadData();
+    } catch (e) {
+      console.error("Erro na migração:", e);
+    }
+  };
+
+  const dismissMigration = () => {
+    ["finance_transactions", "finance_categories", "finance_bills", "finance_initial_balance", "finance_last_active_month"].forEach((k) => localStorage.removeItem(k));
+    setPendingMigration(false);
+  };
 
   const setInitialBalance = async (amount: number) => {
     if (!user) return;
@@ -201,6 +272,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
     <FinanceContext.Provider value={{
       transactions, categories, bills, initialBalance, setInitialBalance,
       currentDate, setCurrentDate, loading,
+      pendingMigration, migrateFromLocalStorage, dismissMigration,
       addTransaction, updateTransaction, deleteTransaction,
       addCategory, updateCategory, deleteCategory,
       addBill, updateBill, deleteBill, toggleBillPaid,

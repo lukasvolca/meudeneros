@@ -10,14 +10,15 @@ import {
   getTransactionsByCategory,
 } from "@/lib/finance";
 import { formatCurrency, cn } from "@/lib/utils";
-import { Wallet, TrendingUp, TrendingDown, CalendarDays, ArrowRight, Check, Clock, PiggyBank } from "lucide-react";
+import { Wallet, TrendingUp, TrendingDown, CalendarDays, ArrowRight, Check, Clock, PiggyBank, Upload } from "lucide-react";
 import { useState } from "react";
 import { Link } from "wouter";
 import { CategoryIcon } from "@/components/CategoryIcon";
 import { subMonths } from "date-fns";
 
 export default function Dashboard() {
-  const { transactions, bills, currentDate, categories, initialBalance, setInitialBalance } = useFinance();
+  const { transactions, bills, currentDate, categories, initialBalance, setInitialBalance, pendingMigration, migrateFromLocalStorage, dismissMigration } = useFinance();
+  const [migrating, setMigrating] = useState(false);
   const [balanceInput, setBalanceInput] = useState(initialBalance > 0 ? String(initialBalance) : "");
 
   const prevDate = subMonths(currentDate, 1);
@@ -62,6 +63,30 @@ export default function Dashboard() {
 
   return (
     <Layout title={greeting}>
+      {pendingMigration && (
+        <div className="glass-panel border border-primary/30 bg-primary/5 p-5 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-2">
+          <Upload className="w-5 h-5 text-primary shrink-0 mt-0.5 sm:mt-0" />
+          <div className="flex-1">
+            <p className="text-sm font-semibold text-white">Dados encontrados neste dispositivo</p>
+            <p className="text-xs text-muted-foreground mt-0.5">Detectamos seus dados salvos localmente. Deseja importá-los para a nuvem?</p>
+          </div>
+          <div className="flex gap-2 shrink-0">
+            <button
+              onClick={async () => { setMigrating(true); await migrateFromLocalStorage(); setMigrating(false); }}
+              disabled={migrating}
+              className="px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50"
+            >
+              {migrating ? "Importando..." : "Importar"}
+            </button>
+            <button
+              onClick={dismissMigration}
+              className="px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-sm text-muted-foreground hover:text-white transition-colors"
+            >
+              Ignorar
+            </button>
+          </div>
+        </div>
+      )}
       {!hasData ? (
         <div className="flex flex-col items-center justify-center py-16 px-4">
           <div className="glass-panel p-10 rounded-3xl max-w-md w-full flex flex-col items-center gap-6 text-center">

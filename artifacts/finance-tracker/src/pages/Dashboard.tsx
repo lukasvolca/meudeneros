@@ -32,14 +32,15 @@ export default function Dashboard() {
   const billsPaidAmount = billsPaid.reduce((s, b) => s + b.amount, 0);
   const billsProgress = billsTotalAmount > 0 ? (billsPaidAmount / billsTotalAmount) * 100 : 0;
 
-  const netOf = (txs: typeof transactions) =>
-    txs.reduce((s, t) => s + (t.type === "income" ? t.amount : -t.amount), 0);
+  const prevMonthKey = `${prevDate.getFullYear()}-${prevDate.getMonth()}`;
+  const prevMonthBillsPaid = bills.filter(b => b.paidByMonth[prevMonthKey]?.paid).reduce((s, b) => s + b.amount, 0);
 
-  const prevMonthNet = netOf(prevMonthTxs);
-  const prevMonthSaved = prevMonthNet < 0 ? 0 : prevMonthNet;
   const income = getTotalIncome(currentMonthTxs);
   const expenses = getTotalExpenses(currentMonthTxs);
-  const saldoDisponivel = initialBalance + income - expenses - billsPaidAmount;
+  const prevMonthIncome = getTotalIncome(prevMonthTxs);
+  const prevMonthExpenses = getTotalExpenses(prevMonthTxs);
+  const prevMonthSaved = Math.max(0, initialBalance + prevMonthIncome - prevMonthExpenses - prevMonthBillsPaid);
+  const saldoDisponivel = prevMonthSaved + income - expenses - billsPaidAmount;
 
   const categoryStats = getTransactionsByCategory(currentMonthTxs);
 

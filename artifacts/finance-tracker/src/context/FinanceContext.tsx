@@ -1,6 +1,8 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
 import { Transaction, Category, Bill } from "../lib/finance";
 import { generateId } from "../lib/utils";
+import { supabase } from "../lib/supabase";
+import { useAuth } from "./AuthContext";
 
 interface FinanceContextType {
   transactions: Transaction[];
@@ -10,6 +12,7 @@ interface FinanceContextType {
   setInitialBalance: (amount: number) => void;
   currentDate: Date;
   setCurrentDate: (date: Date) => void;
+  loading: boolean;
   addTransaction: (tx: Omit<Transaction, "id" | "createdAt">) => void;
   updateTransaction: (id: string, tx: Partial<Omit<Transaction, "id" | "createdAt">>) => void;
   deleteTransaction: (id: string) => void;
@@ -26,201 +29,190 @@ interface FinanceContextType {
 const FinanceContext = createContext<FinanceContextType | undefined>(undefined);
 
 export function FinanceProvider({ children }: { children: React.ReactNode }) {
-  const [transactions, setTransactions] = useState<Transaction[]>(() => {
-    try {
-      const saved = localStorage.getItem("finance_transactions");
-      return saved ? JSON.parse(saved) : [];
-    } catch { return []; }
-  });
+  const { user } = useAuth();
 
-  const [categories, setCategories] = useState<Category[]>(() => {
-    try {
-      const saved = localStorage.getItem("finance_categories");
-      return saved ? JSON.parse(saved) : [];
-    } catch { return []; }
-  });
-
-  const [bills, setBills] = useState<Bill[]>(() => {
-    try {
-      const saved = localStorage.getItem("finance_bills");
-      if (!saved) return [];
-      const parsed = JSON.parse(saved);
-      // Migrate old format (bills with month/year/paid/paidAt) to new template format
-      return parsed.map((b: Bill & { month?: number; year?: number; paid?: boolean; paidAt?: string | null }) => {
-        if (b.paidByMonth !== undefined) return b;
-        const paidByMonth: Bill["paidByMonth"] = {};
-        if (b.paid && b.month !== undefined && b.year !== undefined) {
-          paidByMonth[`${b.year}-${b.month}`] = { paid: true, paidAt: b.paidAt ?? null };
-        }
-        return { id: b.id, name: b.name, amount: b.amount, type: b.type, paidByMonth, createdAt: b.createdAt };
-      });
-    } catch { return []; }
-  });
-
-  const [initialBalance, setInitialBalanceState] = useState<number>(() => {
-    try {
-      const saved = localStorage.getItem("finance_initial_balance");
-      return saved ? parseFloat(saved) : 0;
-    } catch { return 0; }
-  });
-
-  const setInitialBalance = (amount: number) => {
-    setInitialBalanceState(amount);
-    localStorage.setItem("finance_initial_balance", String(amount));
-  };
-
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [bills, setBills] = useState<Bill[]>([]);
+  const [initialBalance, setInitialBalanceState] = useState(0);
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  const loadData = useCallback(async () => {
+    if (!user) { setLoading(false); return; }
+    setLoading(true);
     try {
-      localStorage.setItem("finance_transactions", JSON.stringify(transactions));
-    } catch (e) {
-      console.warn("Não foi possível salvar transações:", e);
-    }
-  }, [transactions]);
+      const [txRes, catRes, billRes, settingsRes] = await Promise.all([
+        supabase.from("transactions").select("*").eq("user_id", user.id).order("created_at"),
+        supabase.from("categories").select("*").eq("user_id", user.id).order("created_at"),
+        supabase.from("bills").select("*").eq("user_id", user.id).order("created_at"),
+        supabase.from("user_settings").select("*").eq("user_id", user.id).single(),
+      ]);
 
-  useEffect(() => {
-    try {
-      localStorage.setItem("finance_categories", JSON.stringify(categories));
-    } catch (e) {
-      console.warn("Não foi possível salvar categorias (armazenamento cheio):", e);
-    }
-  }, [categories]);
+      setTransactions((txRes.data ?? []).map((r) => ({
+        id: r.id, date: r.date, title: r.title, amount: r.amount,
+        type: r.type, categoryId: r.category_id, categoryName: r.category_name,
+        createdAt: r.created_at,
+      })));
 
-  useEffect(() => {
-    try {
-      localStorage.setItem("finance_bills", JSON.stringify(bills));
-    } catch (e) {
-      console.warn("Não foi possível salvar contas:", e);
-    }
-  }, [bills]);
+      setCategories((catRes.data ?? []).map((r) => ({
+        id: r.id, name: r.name, icon: r.icon, type: r.type,
+        limit: r.limit_amount, createdAt: r.created_at,
+      })));
 
-  const addTransaction = (txData: Omit<Transaction, "id" | "createdAt">) => {
-    const category = categories.find((c) => c.id === txData.categoryId);
-    const newTx: Transaction = {
-      ...txData,
-      categoryName: category?.name || txData.categoryName || "",
-      id: generateId(),
-      createdAt: new Date().toISOString(),
-    };
-    setTransactions((prev) => [...prev, newTx]);
+      setBills((billRes.data ?? []).map((r) => ({
+        id: r.id, name: r.name, amount: r.amount, type: r.type,
+        paidByMonth: r.paid_by_month ?? {}, createdAt: r.created_at,
+      })));
+
+      setInitialBalanceState(settingsRes.data?.initial_balance ?? 0);
+    } finally {
+      setLoading(false);
+    }
+  }, [user]);
+
+  useEffect(() => { loadData(); }, [loadData]);
+
+  const setInitialBalance = async (amount: number) => {
+    if (!user) return;
+    setInitialBalanceState(amount);
+    await supabase.from("user_settings").upsert({ user_id: user.id, initial_balance: amount, updated_at: new Date().toISOString() });
   };
 
-  const updateTransaction = (id: string, txData: Partial<Omit<Transaction, "id" | "createdAt">>) => {
-    setTransactions((prev) =>
-      prev.map((tx) => {
-        if (tx.id !== id) return tx;
-        const category = txData.categoryId
-          ? categories.find(c => c.id === txData.categoryId)
-          : undefined;
-        return {
-          ...tx,
-          ...txData,
-          categoryName: category?.name || txData.categoryName || tx.categoryName,
-        };
-      })
-    );
-  };
-
-  const deleteTransaction = (id: string) => {
-    setTransactions((prev) => prev.filter((tx) => tx.id !== id));
-  };
-
-  const addCategory = (name: string, icon?: string, type?: "income" | "expense") => {
+  // --- Transactions ---
+  const addTransaction = async (txData: Omit<Transaction, "id" | "createdAt">) => {
+    if (!user) return;
     const id = generateId();
-    const newCat: Category = { id, name, icon, type, createdAt: new Date().toISOString() };
+    const now = new Date().toISOString();
+    const newTx: Transaction = { ...txData, id, createdAt: now };
+    setTransactions((prev) => [...prev, newTx]);
+    await supabase.from("transactions").insert({
+      id, user_id: user.id, date: txData.date, title: txData.title,
+      amount: txData.amount, type: txData.type,
+      category_id: txData.categoryId, category_name: txData.categoryName,
+      created_at: now,
+    });
+  };
+
+  const updateTransaction = async (id: string, txData: Partial<Omit<Transaction, "id" | "createdAt">>) => {
+    if (!user) return;
+    setTransactions((prev) => prev.map((tx) => tx.id === id ? { ...tx, ...txData } : tx));
+    await supabase.from("transactions").update({
+      ...(txData.date && { date: txData.date }),
+      ...(txData.title && { title: txData.title }),
+      ...(txData.amount !== undefined && { amount: txData.amount }),
+      ...(txData.type && { type: txData.type }),
+      ...(txData.categoryId && { category_id: txData.categoryId }),
+      ...(txData.categoryName && { category_name: txData.categoryName }),
+    }).eq("id", id).eq("user_id", user.id);
+  };
+
+  const deleteTransaction = async (id: string) => {
+    if (!user) return;
+    setTransactions((prev) => prev.filter((tx) => tx.id !== id));
+    await supabase.from("transactions").delete().eq("id", id).eq("user_id", user.id);
+  };
+
+  // --- Categories ---
+  const addCategory = (name: string, icon?: string, type?: "income" | "expense") => {
+    if (!user) return "";
+    const id = generateId();
+    const now = new Date().toISOString();
+    const newCat: Category = { id, name, icon, type, createdAt: now };
     setCategories((prev) => [...prev, newCat]);
+    supabase.from("categories").insert({ id, user_id: user.id, name, icon, type, created_at: now });
     return id;
   };
 
-  const updateCategory = (id: string, updates: { name?: string; icon?: string; limit?: number }) => {
-    setCategories((prev) => prev.map(c => c.id === id ? { ...c, ...updates } : c));
+  const updateCategory = async (id: string, updates: { name?: string; icon?: string; limit?: number }) => {
+    if (!user) return;
+    setCategories((prev) => prev.map((c) => c.id === id ? { ...c, ...updates } : c));
     if (updates.name) {
-      setTransactions((prev) =>
-        prev.map(tx => tx.categoryId === id ? { ...tx, categoryName: updates.name! } : tx)
-      );
+      setTransactions((prev) => prev.map((tx) => tx.categoryId === id ? { ...tx, categoryName: updates.name! } : tx));
+      await supabase.from("transactions").update({ category_name: updates.name }).eq("category_id", id).eq("user_id", user.id);
     }
+    await supabase.from("categories").update({
+      ...(updates.name && { name: updates.name }),
+      ...(updates.icon !== undefined && { icon: updates.icon }),
+      ...(updates.limit !== undefined && { limit_amount: updates.limit }),
+    }).eq("id", id).eq("user_id", user.id);
   };
 
-  const deleteCategory = (id: string) => {
+  const deleteCategory = async (id: string) => {
+    if (!user) return;
     setCategories((prev) => prev.filter((c) => c.id !== id));
+    await supabase.from("categories").delete().eq("id", id).eq("user_id", user.id);
   };
 
-  const addBill = (billData: { name: string; amount: number; type: "fixed" | "variable" }) => {
-    const newBill: Bill = {
-      id: generateId(),
-      name: billData.name,
-      amount: billData.amount,
-      type: billData.type,
-      paidByMonth: {},
-      createdAt: new Date().toISOString(),
-    };
+  // --- Bills ---
+  const addBill = async (billData: { name: string; amount: number; type: "fixed" | "variable" }) => {
+    if (!user) return;
+    const id = generateId();
+    const now = new Date().toISOString();
+    const newBill: Bill = { id, ...billData, paidByMonth: {}, createdAt: now };
     setBills((prev) => [...prev, newBill]);
+    await supabase.from("bills").insert({ id, user_id: user.id, name: billData.name, amount: billData.amount, type: billData.type, paid_by_month: {}, created_at: now });
   };
 
-  const updateBill = (id: string, updates: { name?: string; amount?: number; type?: "fixed" | "variable" }) => {
-    setBills((prev) => prev.map((b) => (b.id === id ? { ...b, ...updates } : b)));
+  const updateBill = async (id: string, updates: { name?: string; amount?: number; type?: "fixed" | "variable" }) => {
+    if (!user) return;
+    setBills((prev) => prev.map((b) => b.id === id ? { ...b, ...updates } : b));
+    await supabase.from("bills").update(updates).eq("id", id).eq("user_id", user.id);
   };
 
-  const deleteBill = (id: string) => {
+  const deleteBill = async (id: string) => {
+    if (!user) return;
     setBills((prev) => prev.filter((b) => b.id !== id));
+    await supabase.from("bills").delete().eq("id", id).eq("user_id", user.id);
   };
 
-  const toggleBillPaid = (id: string, monthKey: string) => {
+  const toggleBillPaid = async (id: string, monthKey: string) => {
+    if (!user) return;
     setBills((prev) =>
       prev.map((b) => {
         if (b.id !== id) return b;
         const current = b.paidByMonth[monthKey];
         const nowPaid = !current?.paid;
-        return {
+        const updated = {
           ...b,
           paidByMonth: {
             ...b.paidByMonth,
             [monthKey]: { paid: nowPaid, paidAt: nowPaid ? new Date().toISOString() : null },
           },
         };
+        supabase.from("bills").update({ paid_by_month: updated.paidByMonth }).eq("id", id).eq("user_id", user.id);
+        return updated;
       })
     );
   };
 
-  const clearAllData = () => {
-    setTransactions([]);
-    setCategories([]);
-    setBills([]);
+  const clearAllData = async () => {
+    if (!user) return;
+    setTransactions([]); setCategories([]); setBills([]); setInitialBalanceState(0);
+    await Promise.all([
+      supabase.from("transactions").delete().eq("user_id", user.id),
+      supabase.from("categories").delete().eq("user_id", user.id),
+      supabase.from("bills").delete().eq("user_id", user.id),
+      supabase.from("user_settings").delete().eq("user_id", user.id),
+    ]);
   };
 
   return (
-    <FinanceContext.Provider
-      value={{
-        transactions,
-        categories,
-        bills,
-        initialBalance,
-        setInitialBalance,
-        currentDate,
-        setCurrentDate,
-        addTransaction,
-        updateTransaction,
-        deleteTransaction,
-        addCategory,
-        updateCategory,
-        deleteCategory,
-        addBill,
-        updateBill,
-        deleteBill,
-        toggleBillPaid,
-        clearAllData,
-      }}
-    >
+    <FinanceContext.Provider value={{
+      transactions, categories, bills, initialBalance, setInitialBalance,
+      currentDate, setCurrentDate, loading,
+      addTransaction, updateTransaction, deleteTransaction,
+      addCategory, updateCategory, deleteCategory,
+      addBill, updateBill, deleteBill, toggleBillPaid,
+      clearAllData,
+    }}>
       {children}
     </FinanceContext.Provider>
   );
 }
 
 export function useFinance() {
-  const context = useContext(FinanceContext);
-  if (context === undefined) {
-    throw new Error("useFinance must be used within a FinanceProvider");
-  }
-  return context;
+  const ctx = useContext(FinanceContext);
+  if (!ctx) throw new Error("useFinance must be used within FinanceProvider");
+  return ctx;
 }

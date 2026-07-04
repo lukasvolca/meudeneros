@@ -1,11 +1,13 @@
 import { useRef, useState } from "react";
 import { Layout } from "@/components/Layout";
 import { useFinance } from "@/context/FinanceContext";
+import { useAuth } from "@/context/AuthContext";
 import { Download, Upload, Trash2, Camera, Check, LogOut, Info, Shield } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 export default function Settings() {
   const { clearAllData, transactions, categories, addTransaction, addCategory } = useFinance();
+  const { signOut, user } = useAuth();
   const { toast } = useToast();
 
   const profile = (window as any)._userProfile || {};
@@ -145,7 +147,7 @@ export default function Settings() {
               </div>
             </div>
             <button
-              onClick={() => (window as any)._logout?.()}
+              onClick={() => signOut()}
               className="flex items-center gap-2 px-4 py-2 rounded-xl border border-white/10 text-muted-foreground hover:text-white hover:border-white/20 hover:bg-white/5 transition-colors text-sm font-medium flex-shrink-0"
             >
               <LogOut className="w-4 h-4" /> Sair

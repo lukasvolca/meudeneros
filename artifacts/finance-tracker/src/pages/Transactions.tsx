@@ -13,7 +13,11 @@ export default function Transactions() {
   const [typeFilter, setTypeFilter] = useState<"all" | "expense" | "income">("all");
 
   const monthTransactions = filterTransactionsByMonth(transactions, currentDate.getMonth(), currentDate.getFullYear());
-  const sortedTransactions = [...monthTransactions].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  const sortedTransactions = [...monthTransactions].sort((a, b) => {
+    const dateDiff = new Date(b.date).getTime() - new Date(a.date).getTime();
+    if (dateDiff !== 0) return dateDiff;
+    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+  });
 
   const filteredTransactions = sortedTransactions.filter((tx) => {
     if (typeFilter !== "all" && tx.type !== typeFilter) return false;

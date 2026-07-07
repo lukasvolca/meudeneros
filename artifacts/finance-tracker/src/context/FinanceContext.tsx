@@ -191,7 +191,12 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
     const now = new Date().toISOString();
     const newCat: Category = { id, name, icon, type, createdAt: now };
     setCategories((prev) => [...prev, newCat]);
-    supabase.from("categories").insert({ id, user_id: user.id, name, icon, type, created_at: now });
+    // IMPORTANTE: o query builder do supabase-js só dispara a requisição quando é
+    // consumido (.then/await). Sem isso a categoria nunca era gravada e virava órfã.
+    supabase
+      .from("categories")
+      .insert({ id, user_id: user.id, name, icon, type, created_at: now })
+      .then(({ error }) => { if (error) console.error("Erro ao salvar categoria:", error); });
     return id;
   };
 

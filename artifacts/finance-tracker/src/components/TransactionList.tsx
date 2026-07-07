@@ -48,6 +48,10 @@ export function TransactionList({ transactions, emptyMessage = "Nenhuma transaç
     return acc;
   }, {} as Record<string, Transaction[]>);
 
+  for (const key of Object.keys(grouped)) {
+    grouped[key].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }
+
   return (
     <div className="space-y-6">
       {Object.entries(grouped).map(([date, txs]) => (
@@ -81,7 +85,7 @@ export function TransactionList({ transactions, emptyMessage = "Nenhuma transaç
                   {/* Left: icon + info — shrinks when space is tight */}
                   <div className="flex items-center gap-3 min-w-0 flex-1 overflow-hidden">
                     <div className="flex-shrink-0">
-                      <CategoryIcon category={category} size="xl" />
+                      <CategoryIcon category={category} size="xl" typeOverride={tx.type} />
                     </div>
                     <div className="min-w-0 overflow-hidden">
                       <p className="font-semibold text-white text-sm truncate">{tx.title}</p>

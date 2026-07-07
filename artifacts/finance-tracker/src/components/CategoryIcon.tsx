@@ -7,6 +7,7 @@ interface CategoryIconProps {
   category?: Category;
   size?: "sm" | "md" | "lg" | "xl";
   className?: string;
+  typeOverride?: "income" | "expense";
 }
 
 const sizeMap = {
@@ -16,12 +17,12 @@ const sizeMap = {
   xl: { wrapper: "w-14 h-14", icon: "w-7 h-7", text: "text-lg" },
 };
 
-export function CategoryIcon({ category, size = "md", className }: CategoryIconProps) {
+export function CategoryIcon({ category, size = "md", className, typeOverride }: CategoryIconProps) {
   const s = sizeMap[size];
 
   if (!category) {
     return (
-      <div className={cn(s.wrapper, "rounded-2xl bg-white/5 flex items-center justify-center flex-shrink-0", className)}>
+      <div className={cn(s.wrapper, "rounded-2xl bg-white/5 flex items-center justify-center shrink-0", className)}>
         <Tag className={cn(s.icon, "text-muted-foreground")} />
       </div>
     );
@@ -31,13 +32,13 @@ export function CategoryIcon({ category, size = "md", className }: CategoryIconP
 
   if (icon?.startsWith("data:")) {
     return (
-      <div className={cn(s.wrapper, "rounded-2xl overflow-hidden flex-shrink-0", className)}>
+      <div className={cn(s.wrapper, "rounded-2xl overflow-hidden shrink-0", className)}>
         <img src={icon} alt={category.name} className="w-full h-full object-cover" />
       </div>
     );
   }
 
-  const isIncome = category.type === "income";
+  const isIncome = (typeOverride ?? category.type) === "income";
   const colorBg = isIncome ? "bg-primary/10" : "bg-destructive/10";
   const colorText = isIncome ? "text-primary" : "text-destructive";
 
@@ -45,16 +46,15 @@ export function CategoryIcon({ category, size = "md", className }: CategoryIconP
     const Icon = (Icons as any)[icon] as Icons.LucideIcon | undefined;
     if (Icon) {
       return (
-        <div className={cn(s.wrapper, "rounded-2xl flex items-center justify-center flex-shrink-0", colorBg, className)}>
+        <div className={cn(s.wrapper, "rounded-2xl flex items-center justify-center shrink-0", colorBg, className)}>
           <Icon className={cn(s.icon, colorText)} />
         </div>
       );
     }
   }
 
-  // Fallback: first letter
   return (
-    <div className={cn(s.wrapper, "rounded-2xl flex items-center justify-center flex-shrink-0 font-bold", s.text, colorBg, colorText, className)}>
+    <div className={cn(s.wrapper, "rounded-2xl flex items-center justify-center shrink-0 font-bold", s.text, colorBg, colorText, className)}>
       {category.name.charAt(0).toUpperCase()}
     </div>
   );

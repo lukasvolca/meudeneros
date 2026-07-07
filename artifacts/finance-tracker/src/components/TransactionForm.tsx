@@ -52,10 +52,24 @@ export function TransactionForm({ initialData, onClose }: TransactionFormProps) 
   const [showIconPicker, setShowIconPicker] = useState(false);
 
   // Typeless categories show only for expenses (they're usually expense categories)
-  // Income mode shows only explicitly income-tagged categories
-  const filteredCategories = categories.filter(c => c.type === type || (!c.type && type === "expense"));
+  // Income mode shows only explicitly income-tagged categories.
+  // A categoria atualmente selecionada sempre aparece, mesmo que não bata com o tipo —
+  // senão o <select> exibe a primeira opção por engano enquanto o valor real fica dessincronizado.
+  const filteredCategories = categories.filter(
+    c => c.type === type || (!c.type && type === "expense") || c.id === categoryId
+  );
 
   const displayDate = date ? date.split("-").reverse().join("/") : "";
+
+  const changeType = (t: "income" | "expense") => {
+    setType(t);
+    const cur = categories.find(c => c.id === categoryId);
+    const fits = cur && (cur.type === t || (!cur.type && t === "expense"));
+    if (!fits) {
+      const firstOfType = categories.find(c => c.type === t || (!c.type && t === "expense"));
+      setCategoryId(firstOfType?.id || "");
+    }
+  };
 
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const masked = formatAmountMask(e.target.value);
@@ -137,7 +151,7 @@ export function TransactionForm({ initialData, onClose }: TransactionFormProps) 
         <div className="flex p-1 bg-black/20 rounded-xl border border-white/5">
           <button
             type="button"
-            onClick={() => setType("expense")}
+            onClick={() => changeType("expense")}
             className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-colors ${
               type === "expense" ? "bg-destructive text-white" : "text-muted-foreground hover:text-white"
             }`}
@@ -146,7 +160,7 @@ export function TransactionForm({ initialData, onClose }: TransactionFormProps) 
           </button>
           <button
             type="button"
-            onClick={() => setType("income")}
+            onClick={() => changeType("income")}
             className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-colors ${
               type === "income" ? "bg-success text-white" : "text-muted-foreground hover:text-white"
             }`}

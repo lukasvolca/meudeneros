@@ -2,9 +2,10 @@ import { Layout } from "@/components/Layout";
 import { TransactionList } from "@/components/TransactionList";
 import { useFinance } from "@/context/FinanceContext";
 import { formatCurrency, cn } from "@/lib/utils";
-import { filterTransactionsByMonth } from "@/lib/finance";
-import { useState } from "react";
-import { PieChart, Edit2, Trash2, X, Check, Image, Search } from "lucide-react";
+import { filterTransactionsByMonth, Category } from "@/lib/finance";
+import { useState, useEffect } from "react";
+import { useSearch } from "wouter";
+import { PieChart, Edit2, Trash2, X, Check, Image, Search, Maximize2, Minimize2, ChevronDown, Target } from "lucide-react";
 import { CategoryIcon } from "@/components/CategoryIcon";
 import { CategoryIconPicker } from "@/components/CategoryIconPicker";
 
@@ -20,6 +21,21 @@ export default function Categories() {
   const [editingLimit, setEditingLimit] = useState("");
   const [showIconPicker, setShowIconPicker] = useState(false);
   const [deleteModal, setDeleteModal] = useState<{ id: string; name: string } | null>(null);
+  // Sempre inicia recolhido; ao sair e voltar (remontagem) volta a ficar recolhido.
+  const [expandedView, setExpandedView] = useState(false);
+  const toggleExpanded = () => setExpandedView(v => !v);
+  // Menu de contexto ancorado num chip (clique direito)
+  const [ctxCat, setCtxCat] = useState<{ cat: Category; x: number; y: number } | null>(null);
+
+  // Filtro vindo do dashboard (ao clicar numa categoria do gráfico): /categories?cat=<id>
+  const search = useSearch();
+  useEffect(() => {
+    const catParam = new URLSearchParams(search).get("cat");
+    if (catParam) {
+      setSelectedCategory(catParam);
+      setCatTypeFilter("all");
+    }
+  }, [search]);
 
   const monthTransactions = filterTransactionsByMonth(transactions, currentDate.getMonth(), currentDate.getFullYear());
 
@@ -47,6 +63,14 @@ export default function Categories() {
         }, {} as Record<string, number>)
     )
   );
+
+  // Card de limite da categoria SELECIONADA (só aparece se ela tiver limite)
+  const selCat = selectedCategory !== "all" ? categories.find(c => c.id === selectedCategory) : undefined;
+  const showLimitCard = !!selCat && !!selCat.limit && selCat.limit > 0;
+  const selLimit = selCat?.limit || 0;
+  const selSpent = selCat ? (categoryExpenses[selCat.id] || 0) : 0;
+  const selPct = selLimit > 0 ? Math.min((selSpent / selLimit) * 100, 100) : 0;
+  const selOver = selLimit > 0 && selSpent > selLimit;
 
   const handleStartEdit = (id: string, name: string, icon?: string, limit?: number) => {
     setEditingCatId(id);
@@ -109,7 +133,17 @@ export default function Categories() {
         <div className="glass-panel p-5 rounded-2xl space-y-4">
           <div className="flex items-center justify-between">
             <p className="text-sm font-medium text-muted-foreground">Filtrar por categoria</p>
-            <span className="text-xs text-muted-foreground">{categories.length} categoria{categories.length !== 1 ? 's' : ''}</span>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={toggleExpanded}
+                className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-white transition-colors"
+                title={expandedView ? "Recolher" : "Expandir para gerenciar"}
+              >
+                {expandedView ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
+                {expandedView ? "Recolher" : "Expandir"}
+              </button>
+              <span className="text-xs text-muted-foreground">{categories.length} categoria{categories.length !== 1 ? 's' : ''}</span>
+            </div>
           </div>
 
           {/* Category type filter */}
@@ -129,7 +163,58 @@ export default function Categories() {
             ))}
           </div>
 
-          {/* Category grid — 3 per row on mobile, 6 on desktop */}
+          {/* Versão recolhida — chips compactos tipo abas (só filtrar) */}
+          {!expandedView && (
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => setSelectedCategory("all")}
+                className={cn(
+                  "flex items-center gap-2 pl-1 pr-3 py-1 rounded-full border transition-colors",
+                  selectedCategory === "all"
+                    ? "border-primary/50 bg-primary/10 text-primary"
+                    : "border-white/10 bg-white/5 text-muted-foreground hover:text-white hover:bg-white/10"
+                )}
+              >
+                <span className="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center text-base leading-none shrink-0">·</span>
+                <span className="text-xs font-medium">Todas</span>
+              </button>
+              {categories
+                .filter(c => catTypeFilter === "all" || c.type === catTypeFilter || (!c.type && catTypeFilter === "expense"))
+                .map((cat) => {
+                  const isSelected = selectedCategory === cat.id;
+                  return (
+                    <button
+                      key={cat.id}
+                      onClick={() => setSelectedCategory(cat.id)}
+                      onContextMenu={(e) => { e.preventDefault(); setSelectedCategory(cat.id); setCtxCat({ cat, x: e.clientX, y: e.clientY }); }}
+                      onDoubleClick={() => { setCtxCat(null); setSelectedCategory(cat.id); setExpandedView(true); }}
+                      title={`${cat.name} — duplo clique: expandir · clique direito: opções`}
+                      className={cn(
+                        "flex items-center gap-2 pl-1 pr-3 py-1 rounded-full border transition-colors max-w-[12rem] select-none",
+                        isSelected
+                          ? "border-primary/50 bg-primary/10 text-primary"
+                          : "border-white/10 bg-white/5 text-muted-foreground hover:text-white hover:bg-white/10"
+                      )}
+                    >
+                      <CategoryIcon category={cat} size="sm" />
+                      <span className="text-xs font-medium truncate">{cat.name}</span>
+                    </button>
+                  );
+                })}
+              {categories.length === 0 && <p className="text-sm text-muted-foreground py-2">Nenhuma categoria criada.</p>}
+              <button
+                onClick={toggleExpanded}
+                title="Expandir para gerenciar"
+                aria-label="Expandir"
+                className="w-9 h-9 rounded-full border border-white/10 bg-white/5 text-muted-foreground hover:text-white hover:bg-white/10 transition-colors flex items-center justify-center shrink-0"
+              >
+                <ChevronDown className="w-4 h-4" />
+              </button>
+            </div>
+          )}
+
+          {/* Versão expandida — cards com gestão (editar / ícone / limite / excluir) */}
+          {expandedView && (
           <div className="cat-grid">
             <button
               onClick={() => setSelectedCategory("all")}
@@ -157,7 +242,7 @@ export default function Categories() {
                   <div
                     key={cat.id}
                     className={cn(
-                      "cat-square glass-panel flex flex-col items-center p-3 rounded-2xl transition-all cursor-pointer",
+                      "cat-square glass-panel flex flex-col items-center p-3 rounded-2xl transition-all cursor-pointer select-none",
                       isEditing
                         ? "ring-2 ring-primary/50"
                         : isSelected
@@ -167,13 +252,25 @@ export default function Categories() {
                     onClick={() => !isEditing && setSelectedCategory(cat.id)}
                   >
                     <div className="flex-1 flex flex-col items-center justify-center gap-1.5 w-full min-h-0">
-                      <CategoryIcon category={cat} size="xl" />
+                      <CategoryIcon category={cat} size={isSelected ? "md" : "xl"} />
                       <span className={cn("text-xs font-semibold truncate w-full text-center leading-tight", isSelected ? "text-primary" : "text-muted-foreground")}>
                         {cat.name}
                       </span>
                       {pct !== null && (
                         <div className="w-full h-1 rounded-full bg-white/10 overflow-hidden">
                           <div className={cn("h-full rounded-full", over ? "bg-destructive" : pct > 80 ? "bg-yellow-500" : "bg-primary")} style={{ width: `${pct}%` }} />
+                        </div>
+                      )}
+                      {isSelected && (
+                        <div className="w-full text-center space-y-0.5">
+                          <p className={cn("text-[10px] font-bold tabular-nums", over ? "text-destructive" : pct !== null && pct > 80 ? "text-yellow-500" : "text-white")}>
+                            {formatCurrency(spent)}
+                          </p>
+                          {limit && limit > 0 && (
+                            <p className="text-[10px] text-muted-foreground tabular-nums">
+                              limite {formatCurrency(limit)}
+                            </p>
+                          )}
                         </div>
                       )}
                     </div>
@@ -206,6 +303,7 @@ export default function Categories() {
 
             {categories.length === 0 && <p style={{ gridColumn: "1 / -1" }} className="text-sm text-muted-foreground py-2">Nenhuma categoria criada.</p>}
           </div>
+          )}
 
           {/* Edit panel — shown below grid when editing */}
           {editingCatId && (() => {
@@ -222,29 +320,34 @@ export default function Categories() {
                   <CategoryIcon category={{ ...cat, icon: editingIcon || cat.icon }} size="xl" />
                 </button>
                 <div className="flex flex-col gap-1.5 flex-1 min-w-0">
-                  <input
-                    autoFocus
-                    value={editingName}
-                    onChange={e => setEditingName(e.target.value)}
-                    onKeyDown={e => { if (e.key === 'Enter') handleSaveEdit(); if (e.key === 'Escape') handleCancelEdit(); }}
-                    className="bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 outline-none text-sm font-semibold text-white w-full"
-                    placeholder="Nome da categoria"
-                  />
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-muted-foreground shrink-0">R$</span>
+                  <div>
+                    <p className="text-[10px] text-muted-foreground mb-1">Nome da Categoria</p>
                     <input
-                      value={editingLimit}
-                      onChange={e => setEditingLimit(e.target.value.replace(/[^0-9.,]/g, ""))}
+                      autoFocus
+                      value={editingName}
+                      onChange={e => setEditingName(e.target.value)}
                       onKeyDown={e => { if (e.key === 'Enter') handleSaveEdit(); if (e.key === 'Escape') handleCancelEdit(); }}
-                      className="bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 outline-none text-xs text-white w-32"
-                      placeholder="Limite mensal"
+                      className="bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 outline-none text-sm font-semibold text-white w-full"
+                      placeholder="Nome da categoria"
                     />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1">
+                      <p className="text-[10px] text-muted-foreground mb-1">Definir limite de gasto</p>
+                      <input
+                        value={editingLimit}
+                        onChange={e => setEditingLimit(e.target.value.replace(/[^0-9.,]/g, ""))}
+                        onKeyDown={e => { if (e.key === 'Enter') handleSaveEdit(); if (e.key === 'Escape') handleCancelEdit(); }}
+                        className="bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 outline-none text-xs text-white w-full"
+                        placeholder="R$ 0,00"
+                      />
+                    </div>
                     <button
                       onClick={() => setShowIconPicker(v => !v)}
-                      className="flex items-center gap-1 text-xs text-muted-foreground hover:text-white transition-colors ml-1"
+                      className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-white transition-colors self-end pb-1.5"
                       title="Alterar ícone"
                     >
-                      <Image className="w-3 h-3" /> ícone
+                      <Image className="w-3 h-3" /> Alterar ícone
                     </button>
                   </div>
                 </div>
@@ -300,7 +403,7 @@ export default function Categories() {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+        <div className={cn("grid grid-cols-1 sm:grid-cols-2 gap-5", showLimitCard ? "lg:grid-cols-4" : "lg:grid-cols-3")}>
           <div className="glass-panel p-5 rounded-2xl flex items-center gap-4">
             <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
               <PieChart className="w-5 h-5" />
@@ -322,6 +425,25 @@ export default function Categories() {
               <p className="text-2xl font-bold font-display text-destructive">{formatCurrency(totalExpense)}</p>
             </div>
           </div>
+          {showLimitCard && (
+            <div className="glass-panel p-5 rounded-2xl flex flex-col justify-center gap-2 border-l-4 border-l-primary">
+              <div>
+                <p className="text-sm text-muted-foreground truncate">Limite · {selCat!.name}</p>
+                <p className="text-2xl font-bold font-display text-white tabular-nums">{formatCurrency(selLimit)}</p>
+              </div>
+              <div className="space-y-1">
+                <div className="h-1.5 rounded-full bg-white/10 overflow-hidden">
+                  <div
+                    className={cn("h-full rounded-full transition-all", selOver ? "bg-destructive" : selPct > 80 ? "bg-yellow-500" : "bg-primary")}
+                    style={{ width: `${selPct}%` }}
+                  />
+                </div>
+                <p className={cn("text-[11px] tabular-nums", selOver ? "text-destructive font-medium" : "text-muted-foreground")}>
+                  {formatCurrency(selSpent)} usados · {selPct.toFixed(0)}%
+                </p>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Transactions */}
@@ -366,6 +488,48 @@ export default function Categories() {
           </div>
         </div>
       )}
+      {ctxCat && (() => {
+        const cat = ctxCat.cat;
+        const close = () => setCtxCat(null);
+        const left = Math.min(ctxCat.x, (typeof window !== "undefined" ? window.innerWidth : 9999) - 224);
+        const top = Math.min(ctxCat.y, (typeof window !== "undefined" ? window.innerHeight : 9999) - 248);
+        const itemCls = "w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm text-muted-foreground hover:text-white hover:bg-white/10 transition-colors";
+        return (
+          <>
+            <div
+              className="fixed inset-0 z-50"
+              onClick={close}
+              onContextMenu={(e) => { e.preventDefault(); close(); }}
+            />
+            <div
+              className="fixed z-50 w-52 glass-panel rounded-xl p-1.5 border border-white/10 shadow-xl select-none"
+              style={{ left, top }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center gap-2 px-2 py-1.5 mb-1 border-b border-white/10">
+                <CategoryIcon category={cat} size="sm" />
+                <span className="text-xs font-semibold text-white truncate">{cat.name}</span>
+              </div>
+              <button className={itemCls} onClick={() => { handleStartIconEdit(cat.id, cat.name, cat.icon, cat.limit); close(); }}>
+                <Image className="w-4 h-4 shrink-0" /> Alterar ícone
+              </button>
+              <button className={itemCls} onClick={() => { handleStartRename(cat.id, cat.name, cat.icon, cat.limit); close(); }}>
+                <Edit2 className="w-4 h-4 shrink-0" /> Alterar nome
+              </button>
+              <button className={itemCls} onClick={() => { handleStartRename(cat.id, cat.name, cat.icon, cat.limit); close(); }}>
+                <Target className="w-4 h-4 shrink-0" /> Alterar limite
+              </button>
+              <div className="h-px bg-white/10 my-1" />
+              <button
+                className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm text-destructive/90 hover:text-destructive hover:bg-destructive/15 transition-colors"
+                onClick={() => { handleDeleteRequest(cat.id, cat.name); close(); }}
+              >
+                <Trash2 className="w-4 h-4 shrink-0" /> Excluir
+              </button>
+            </div>
+          </>
+        );
+      })()}
     </Layout>
   );
 }

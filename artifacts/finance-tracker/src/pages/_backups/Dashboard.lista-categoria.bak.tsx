@@ -14,7 +14,6 @@ import { Wallet, TrendingUp, TrendingDown, CalendarDays, ArrowRight, Check, Cloc
 import { useState } from "react";
 import { Link } from "wouter";
 import { CategoryIcon } from "@/components/CategoryIcon";
-import { CategoryDonut, type DonutSlice } from "@/components/CategoryDonut";
 import { subMonths } from "date-fns";
 
 export default function Dashboard() {
@@ -44,58 +43,6 @@ export default function Dashboard() {
   const saldoDisponivel = prevMonthSaved + income - expenses - billsPaidAmount;
 
   const categoryStats = getTransactionsByCategory(currentMonthTxs);
-
-  // --- Dados do donut de gastos por categoria ---
-  // Paleta categórica validada (CVD-safe no fundo do app); ordem fixa, nunca cicla.
-  const DONUT_COLORS = ["#3987e5", "#199e70", "#c98500", "#008300", "#9085e9", "#e66767", "#d55181", "#d95926"];
-  const OUTROS_COLOR = "#6b7280";
-  const MAX_SLICES = 8;
-
-  const expenseEntries = Object.entries(categoryStats)
-    .filter(([, s]) => s.expense > 0)
-    .map(([catId, s]) => {
-      const cat = categories.find((c) => c.id === catId);
-      return {
-        id: catId,
-        name: cat?.name || "Sem categoria",
-        amount: s.expense,
-        count: s.transactions.filter((t) => t.type === "expense").length,
-        limit: cat?.limit,
-        icon: cat?.icon,
-      };
-    })
-    .sort((a, b) => b.amount - a.amount);
-
-  const donutTotal = expenseEntries.reduce((s, e) => s + e.amount, 0);
-
-  let donutSlices: DonutSlice[];
-  if (expenseEntries.length > MAX_SLICES) {
-    const head = expenseEntries.slice(0, MAX_SLICES - 1);
-    const tail = expenseEntries.slice(MAX_SLICES - 1);
-    const outros = {
-      id: "__outros__",
-      name: "Outros",
-      amount: tail.reduce((s, e) => s + e.amount, 0),
-      count: tail.reduce((s, e) => s + e.count, 0),
-    };
-    donutSlices = [...head, outros].map((e, i) => ({ ...e, color: e.id === "__outros__" ? OUTROS_COLOR : DONUT_COLORS[i] }));
-  } else {
-    donutSlices = expenseEntries.map((e, i) => ({ ...e, color: DONUT_COLORS[i] }));
-  }
-
-  const incomeItems = Object.entries(categoryStats)
-    .filter(([, s]) => s.income > 0)
-    .map(([catId, s]) => {
-      const cat = categories.find((c) => c.id === catId);
-      return {
-        id: catId,
-        name: cat?.name || "Sem categoria",
-        amount: s.income,
-        icon: cat?.icon,
-        count: s.transactions.filter((t) => t.type === "income").length,
-      };
-    })
-    .sort((a, b) => b.amount - a.amount);
 
   const recentTxs = [...currentMonthTxs]
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
@@ -229,15 +176,74 @@ export default function Dashboard() {
             />
           </div>
 
-          <div className="glass-panel p-6 rounded-3xl space-y-5">
-            <div className="flex items-center justify-between">
-              <h3 className="text-base font-display font-bold">Gastos por Categoria</h3>
-              <span className="text-xs text-muted-foreground tabular-nums">{formatCurrency(donutTotal)} no mês</span>
-            </div>
-            {donutTotal <= 0 && incomeItems.length === 0 ? (
+          <div className="glass-panel p-6 rounded-3xl space-y-4">
+            <h3 className="text-base font-display font-bold">Resumo por Categoria</h3>
+            {Object.keys(categoryStats).length === 0 ? (
               <p className="text-muted-foreground text-sm text-center py-4">Sem dados neste mês.</p>
             ) : (
-              <CategoryDonut slices={donutSlices} total={donutTotal} incomeItems={incomeItems} />
+              <div className="space-y-3">
+                {Object.entries(categoryStats)
+                  .sort(([, a], [, b]) => b.expense - a.expense)
+                  .flatMap(([catId, stats]) => {
+                    const category = categories.find(c => c.id === catId);
+                    const catName = category?.name || "Sem categoria";
+                    const items: React.ReactNode[] = [];
+
+                    if (stats.expense > 0) {
+                      const label = stats.income > 0 ? `${catName} (saídas)` : catName;
+                      const limit = category?.limit;
+                      const pct = limit && limit > 0 ? Math.min((stats.expense / limit) * 100, 100) : null;
+                      const over = limit && limit > 0 && stats.expense > limit;
+                      items.push(
+                        <div key={`${catId}-expense`} className="space-y-1">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <CategoryIcon category={category} size="sm" />
+                              <div>
+                                <p className="font-semibold text-sm">{label}</p>
+                                <p className="text-xs text-muted-foreground">{stats.transactions.filter(t => t.type === "expense").length} transaç{stats.transactions.filter(t => t.type === "expense").length === 1 ? "ão" : "ões"}</p>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <span className="font-bold text-sm text-destructive">-{formatCurrency(stats.expense)}</span>
+                              {limit && limit > 0 && (
+                                <p className={cn("text-[10px]", over ? "text-destructive font-semibold" : "text-muted-foreground")}>
+                                  / {formatCurrency(limit)}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                          {pct !== null && (
+                            <div className="h-1.5 rounded-full bg-white/10 overflow-hidden ml-9">
+                              <div
+                                className={cn("h-full rounded-full transition-all", over ? "bg-destructive" : pct > 80 ? "bg-yellow-500" : "bg-primary")}
+                                style={{ width: `${pct}%` }}
+                              />
+                            </div>
+                          )}
+                        </div>
+                      );
+                    }
+
+                    if (stats.income > 0) {
+                      const label = stats.expense > 0 ? `${catName} (entradas)` : catName;
+                      items.push(
+                        <div key={`${catId}-income`} className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <CategoryIcon category={category} size="sm" />
+                            <div>
+                              <p className="font-semibold text-sm">{label}</p>
+                              <p className="text-xs text-muted-foreground">{stats.transactions.filter(t => t.type === "income").length} transaç{stats.transactions.filter(t => t.type === "income").length === 1 ? "ão" : "ões"}</p>
+                            </div>
+                          </div>
+                          <span className="font-bold text-sm text-success">+{formatCurrency(stats.income)}</span>
+                        </div>
+                      );
+                    }
+
+                    return items;
+                  })}
+              </div>
             )}
           </div>
 

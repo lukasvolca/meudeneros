@@ -244,18 +244,14 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
 
   const toggleBillPaid = async (id: string, monthKey: string) => {
     if (!user) return;
-    let newPaidByMonth: Bill["paidByMonth"] = {};
-    setBills((prev) =>
-      prev.map((b) => {
-        if (b.id !== id) return b;
-        const nowPaid = !b.paidByMonth[monthKey]?.paid;
-        newPaidByMonth = {
-          ...b.paidByMonth,
-          [monthKey]: { paid: nowPaid, paidAt: nowPaid ? new Date().toISOString() : null },
-        };
-        return { ...b, paidByMonth: newPaidByMonth };
-      })
-    );
+    const bill = bills.find((b) => b.id === id);
+    if (!bill) return;
+    const nowPaid = !bill.paidByMonth[monthKey]?.paid;
+    const newPaidByMonth: Bill["paidByMonth"] = {
+      ...bill.paidByMonth,
+      [monthKey]: { paid: nowPaid, paidAt: nowPaid ? new Date().toISOString() : null },
+    };
+    setBills((prev) => prev.map((b) => (b.id === id ? { ...b, paidByMonth: newPaidByMonth } : b)));
     await supabase.from("bills").update({ paid_by_month: newPaidByMonth }).eq("id", id).eq("user_id", user.id);
   };
 

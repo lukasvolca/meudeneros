@@ -15,16 +15,14 @@ import { useState } from "react";
 import { Link } from "wouter";
 import { CategoryIcon } from "@/components/CategoryIcon";
 import { CategoryDonut, type DonutSlice } from "@/components/CategoryDonut";
-import { subMonths } from "date-fns";
+import { QuickAdd } from "@/components/QuickAdd";
 
 export default function Dashboard() {
   const { transactions, bills, currentDate, categories, initialBalance, setInitialBalance, pendingMigration, migrateFromLocalStorage, dismissMigration } = useFinance();
   const [migrating, setMigrating] = useState(false);
   const [balanceInput, setBalanceInput] = useState(initialBalance > 0 ? String(initialBalance) : "");
 
-  const prevDate = subMonths(currentDate, 1);
   const currentMonthTxs = filterTransactionsByMonth(transactions, currentDate.getMonth(), currentDate.getFullYear());
-  const prevMonthTxs = filterTransactionsByMonth(transactions, prevDate.getMonth(), prevDate.getFullYear());
 
   const monthKey = `${currentDate.getFullYear()}-${currentDate.getMonth()}`;
   const billsPaid = bills.filter(b => b.paidByMonth[monthKey]?.paid);
@@ -33,14 +31,26 @@ export default function Dashboard() {
   const billsPaidAmount = billsPaid.reduce((s, b) => s + b.amount, 0);
   const billsProgress = billsTotalAmount > 0 ? (billsPaidAmount / billsTotalAmount) * 100 : 0;
 
-  const prevMonthKey = `${prevDate.getFullYear()}-${prevDate.getMonth()}`;
-  const prevMonthBillsPaid = bills.filter(b => b.paidByMonth[prevMonthKey]?.paid).reduce((s, b) => s + b.amount, 0);
-
   const income = getTotalIncome(currentMonthTxs);
   const expenses = getTotalExpenses(currentMonthTxs);
-  const prevMonthIncome = getTotalIncome(prevMonthTxs);
-  const prevMonthExpenses = getTotalExpenses(prevMonthTxs);
-  const prevMonthSaved = Math.max(0, initialBalance + prevMonthIncome - prevMonthExpenses - prevMonthBillsPaid);
+
+  // "Economizado mês anterior" = saldo acumulado até o fim do mês anterior:
+  // saldo inicial + TODAS as entradas/saídas/contas pagas ANTES do mês atual
+  // (não só o mês anterior isolado — senão os meses do meio somem).
+  const startOfCurrentMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).getTime();
+  const pastTxs = transactions.filter((t) => new Date(t.date).getTime() < startOfCurrentMonth);
+  const pastIncome = getTotalIncome(pastTxs);
+  const pastExpenses = getTotalExpenses(pastTxs);
+  let pastBillsPaid = 0;
+  for (const b of bills) {
+    for (const [key, v] of Object.entries(b.paidByMonth)) {
+      if (!v?.paid) continue;
+      const [ky, km] = key.split("-").map(Number);
+      const beforeCurrent = ky < currentDate.getFullYear() || (ky === currentDate.getFullYear() && km < currentDate.getMonth());
+      if (beforeCurrent) pastBillsPaid += b.amount;
+    }
+  }
+  const prevMonthSaved = initialBalance + pastIncome - pastExpenses - pastBillsPaid;
   const saldoDisponivel = prevMonthSaved + income - expenses - billsPaidAmount;
 
   const categoryStats = getTransactionsByCategory(currentMonthTxs);
@@ -209,8 +219,13 @@ export default function Dashboard() {
               amount={formatCurrency(prevMonthSaved)}
               icon={<CalendarDays className="w-12 h-12 text-accent" />}
               colorClass="text-accent"
+              editValue={prevMonthSaved}
+              onSave={(value) => setInitialBalance(value - (pastIncome - pastExpenses - pastBillsPaid))}
+              editHint="Ajusta o saldo inicial para bater com este valor. O Saldo Disponível acompanha."
             />
           </div>
+
+          <QuickAdd />
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <TopList

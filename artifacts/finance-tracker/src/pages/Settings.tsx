@@ -6,7 +6,7 @@ import { Download, Upload, Trash2, Camera, Check, LogOut, Info, Shield } from "l
 import { useToast } from "@/hooks/use-toast";
 
 export default function Settings() {
-  const { clearAllData, transactions, categories, addTransaction, addCategory } = useFinance();
+  const { clearAllData, transactions, categories, bills, initialBalance, addTransaction, addCategory } = useFinance();
   const { signOut, user } = useAuth();
   const { toast } = useToast();
 
@@ -50,7 +50,7 @@ export default function Settings() {
   };
 
   const handleExport = () => {
-    const data = { transactions, categories, exportedAt: new Date().toISOString() };
+    const data = { transactions, categories, bills, initialBalance, exportedAt: new Date().toISOString() };
     const url = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data, null, 2));
     const a = document.createElement("a");
     a.href = url; a.download = "meudeneros_backup.json";

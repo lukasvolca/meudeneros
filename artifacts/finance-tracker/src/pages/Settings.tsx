@@ -194,7 +194,7 @@ export default function Settings() {
             <h3 className="text-lg font-display font-bold">Sobre o Meu Deneros</h3>
           </div>
           <p className="text-sm text-muted-foreground leading-relaxed">App de controle financeiro desenvolvido pela Pombo Lab</p>
-          <div className="pt-4 text-xs text-white/30 font-mono">Versão 2.3</div>
+          <div className="pt-4 text-xs text-white/30 font-mono">Versão 2.4</div>
         </section>
 
       </div>

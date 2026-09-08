@@ -100,15 +100,14 @@ export function TransactionForm({ initialData, onClose }: TransactionFormProps) 
       categoryName: selectedCategory?.name || "",
     };
 
-    if (initialData?.id) {
+    const asNewBill = billType && isContasCategory && !initialData?.id;
+
+    if (asNewBill) {
+      addBill({ name: title.trim(), amount: parseAmount(amount), type: billType, paidAt: txData.date });
+    } else if (initialData?.id) {
       updateTransaction(initialData.id, txData);
     } else {
       addTransaction(txData);
-    }
-
-    if (billType && isContasCategory) {
-      const txDate = new Date(date + "T12:00:00").toISOString();
-      addBill({ name: title.trim(), amount: parseAmount(amount), type: billType, paid: true, paidAt: txDate });
     }
 
     if (onClose) onClose();
@@ -328,7 +327,7 @@ export function TransactionForm({ initialData, onClose }: TransactionFormProps) 
               ))}
             </div>
             {billType && (
-              <p className="text-xs text-primary mt-1">Esta transação será adicionada como conta {billType === "fixed" ? "fixa" : "variável"} na aba Contas do Mês.</p>
+              <p className="text-xs text-primary mt-1">Será registrada como conta {billType === "fixed" ? "fixa" : "variável"} já paga na aba Contas do Mês, em vez de transação — assim o valor é descontado uma vez só.</p>
             )}
           </div>
         )}

@@ -22,7 +22,7 @@ interface FinanceContextType {
   addCategory: (name: string, icon?: string, type?: "income" | "expense") => string;
   updateCategory: (id: string, updates: { name?: string; icon?: string; limit?: number }) => void;
   deleteCategory: (id: string) => void;
-  addBill: (bill: { name: string; amount: number; type: "fixed" | "variable" }) => void;
+  addBill: (bill: { name: string; amount: number; type: "fixed" | "variable"; paidAt?: string }) => void;
   updateBill: (id: string, updates: { name?: string; amount?: number; type?: "fixed" | "variable" }) => void;
   deleteBill: (id: string) => void;
   toggleBillPaid: (id: string, monthKey: string) => void;
@@ -221,13 +221,18 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
   };
 
   // --- Bills ---
-  const addBill = async (billData: { name: string; amount: number; type: "fixed" | "variable" }) => {
+  const addBill = async ({ paidAt, ...billData }: { name: string; amount: number; type: "fixed" | "variable"; paidAt?: string }) => {
     if (!user) return;
     const id = generateId();
     const now = new Date().toISOString();
-    const newBill: Bill = { id, ...billData, paidByMonth: {}, createdAt: now };
+    let paidByMonth: Bill["paidByMonth"] = {};
+    if (paidAt) {
+      const d = new Date(paidAt);
+      paidByMonth = { [`${d.getFullYear()}-${d.getMonth()}`]: { paid: true, paidAt } };
+    }
+    const newBill: Bill = { id, ...billData, paidByMonth, createdAt: now };
     setBills((prev) => [...prev, newBill]);
-    await supabase.from("bills").insert({ id, user_id: user.id, name: billData.name, amount: billData.amount, type: billData.type, paid_by_month: {}, created_at: now });
+    await supabase.from("bills").insert({ id, user_id: user.id, name: billData.name, amount: billData.amount, type: billData.type, paid_by_month: paidByMonth, created_at: now });
   };
 
   const updateBill = async (id: string, updates: { name?: string; amount?: number; type?: "fixed" | "variable" }) => {

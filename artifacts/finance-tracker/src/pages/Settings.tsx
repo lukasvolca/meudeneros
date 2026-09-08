@@ -2,8 +2,9 @@ import { useRef, useState } from "react";
 import { Layout } from "@/components/Layout";
 import { useFinance } from "@/context/FinanceContext";
 import { useAuth } from "@/context/AuthContext";
-import { Download, Upload, Trash2, Camera, Check, LogOut, Info, Shield } from "lucide-react";
+import { Download, Upload, Trash2, Camera, Check, LogOut, Info, Shield, ScrollText, X, Sparkles, Wrench } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { CHANGELOG, APP_VERSION } from "@/lib/changelog";
 
 export default function Settings() {
   const { clearAllData, transactions, categories, bills, initialBalance, addTransaction, addCategory } = useFinance();
@@ -16,6 +17,7 @@ export default function Settings() {
   const [saving, setSaving] = useState(false);
   const avatarRef = useRef<HTMLInputElement>(null);
   const importRef = useRef<HTMLInputElement>(null);
+  const [showChangelog, setShowChangelog] = useState(false);
 
   const handleSaveName = async () => {
     setSaving(true);
@@ -194,10 +196,77 @@ export default function Settings() {
             <h3 className="text-lg font-display font-bold">Sobre o Meu Deneros</h3>
           </div>
           <p className="text-sm text-muted-foreground leading-relaxed">App de controle financeiro desenvolvido pela Pombo Lab</p>
-          <div className="pt-4 text-xs text-white/30 font-mono">Versão 2.6</div>
+          <div className="pt-4 flex items-center gap-3">
+            <span className="text-xs text-white/30 font-mono">Versão {APP_VERSION}</span>
+            <button
+              onClick={() => setShowChangelog(true)}
+              className="flex items-center gap-1.5 text-xs text-primary hover:text-primary/80 transition-colors font-medium"
+            >
+              <ScrollText className="w-3.5 h-3.5" /> Ler patch notes
+            </button>
+          </div>
         </section>
 
       </div>
+
+      {showChangelog && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+          onClick={() => setShowChangelog(false)}
+        >
+          <div
+            className="glass-panel rounded-2xl w-full max-w-lg max-h-[80vh] flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start gap-3 p-6 pb-4 border-b border-white/5">
+              <ScrollText className="w-5 h-5 text-primary mt-0.5 shrink-0" />
+              <div className="min-w-0 flex-1">
+                <h3 className="text-base font-display font-bold text-white">Patch notes</h3>
+                <p className="text-xs text-muted-foreground">O que mudou em cada versão</p>
+              </div>
+              <button
+                onClick={() => setShowChangelog(false)}
+                aria-label="Fechar"
+                className="p-2 -mr-2 -mt-2 rounded-full text-muted-foreground hover:text-white hover:bg-white/10 transition-colors shrink-0"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="overflow-y-auto p-6 pt-5 space-y-6">
+              {CHANGELOG.map((release) => (
+                <div key={release.version} className="space-y-3">
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-sm font-display font-bold text-white">Versão {release.version}</span>
+                    {release.version === APP_VERSION && (
+                      <span className="text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded-md bg-primary/20 text-primary font-semibold">
+                        atual
+                      </span>
+                    )}
+                    {release.date && (
+                      <span className="text-[11px] text-muted-foreground ml-auto tabular-nums">
+                        {release.date.split("-").reverse().join("/")}
+                      </span>
+                    )}
+                  </div>
+                  <ul className="space-y-2.5">
+                    {release.changes.map((change, i) => (
+                      <li key={i} className="flex gap-2.5">
+                        {change.type === "feat" ? (
+                          <Sparkles className="w-3.5 h-3.5 text-success mt-0.5 shrink-0" />
+                        ) : (
+                          <Wrench className="w-3.5 h-3.5 text-accent mt-0.5 shrink-0" />
+                        )}
+                        <p className="text-xs text-muted-foreground leading-relaxed">{change.text}</p>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </Layout>
   );
 }
